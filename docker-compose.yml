@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - DATABASE_URL=sqlite+aiosqlite:///./krishidrishti.db
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]
+    volumes:
+      - ./backend:/app
+      - db_data:/app/data
+    depends_on:
+      - ollama
+    networks:
+      - krishidrishti_network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - krishidrishti_network
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - krishidrishti_network
+
+volumes:
+  db_data:
+  ollama_data:
+
+networks:
+  krishidrishti_network:
+    driver: bridge

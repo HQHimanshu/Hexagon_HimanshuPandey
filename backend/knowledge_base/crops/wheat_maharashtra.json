@@ -1,0 +1,45 @@
+{
+  "crop": "wheat",
+  "region": "maharashtra",
+  "temperature": {
+    "min": 20,
+    "max": 35,
+    "optimal": 25
+  },
+  "soil_moisture": {
+    "optimal_min": 30,
+    "optimal_max": 60,
+    "critical_low": 20,
+    "critical_high": 80
+  },
+  "ph_range": {
+    "min": 6.0,
+    "max": 7.5,
+    "optimal": 6.8
+  },
+  "irrigation": {
+    "frequency": "every 7-10 days",
+    "method": "drip irrigation",
+    "water_per_acre_liters": 5000,
+    "best_time": "early morning or evening"
+  },
+  "fertilizer": {
+    "type": "NPK (120:60:40)",
+    "amount": "60 kg per acre",
+    "stages": [
+      {"stage": "sowing", "fertilizer": "DAP - 50 kg/acre"},
+      {"stage": "tillering", "fertilizer": "Urea - 30 kg/acre"},
+      {"stage": "flowering", "fertilizer": "Potash - 20 kg/acre"}
+    ]
+  },
+  "alerts": [
+    "Soil moisture below 30% - irrigate immediately",
+    "Temperature above 35°C - increase irrigation frequency",
+    "pH below 6.0 - add lime to soil",
+    "Humidity above 80% - watch for fungal diseases"
+  ],
+  "growing_season": "October to March (Rabi season)",
+  "harvest_time_days": 120,
+  "common_diseases": ["Rust", "Powdery Mildew", "Blight"],
+  "pest_control": "Use neem oil spray every 15 days"
+}
