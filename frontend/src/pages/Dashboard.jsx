@@ -1,133 +1,113 @@
-import React, { useState, useEffect } from 'react'
-import { dashboardAPI, sensorAPI } from '../services/api'
-import SensorGrid from '../components/dashboard/SensorGrid'
-import WeatherWidget from '../components/dashboard/WeatherWidget'
-import ResourceMetrics from '../components/dashboard/ResourceMetrics'
-import QuickActions from '../components/dashboard/QuickActions'
-import AlertList from '../components/notifications/AlertList'
-import { Loader2 } from 'lucide-react'
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import SensorCards from '../components/dashboard/SensorCards';
+import AlertBanner from '../components/dashboard/AlertBanner';
+import ResourceMetrics from '../components/dashboard/ResourceMetrics';
+import AIChat from '../components/common/AIChat';
+import api from '../utils/api';
+import { Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
-  const [loading, setLoading] = useState(true)
-  const [metrics, setMetrics] = useState(null)
-  const [error, setError] = useState('')
+  const { t } = useTranslation();
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchMetrics()
-  }, [])
+    const fetchMetrics = async () => {
+      try {
+        const response = await api.get('/dashboard/metrics');
+        setMetrics(response.data);
+      } catch (err) {
+        console.error('Failed to fetch dashboard metrics from FastAPI', err);
+        setError(t('common.error'));
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchMetrics = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 3000)
-      )
-      
-      const fetchPromise = dashboardAPI.getMetrics()
-      const response = await Promise.race([fetchPromise, timeoutPromise])
-      setMetrics(response.data)
-    } catch (err) {
-      // Developer bypass: Use mock data when backend is not running or timeout
-      console.warn('Using mock dashboard data:', err.message)
-      setMetrics({
-        current_sensor_data: {
-          temperature: 32.5,
-          humidity: 68.2,
-          soil_moisture_surface: 412,
-          soil_moisture_root: 620,
-          ph_level: 6.8,
-          rain_detected: false,
-          water_tank_level: 75,
-          timestamp: new Date().toISOString()
-        },
-        weather: {
-          temperature: 33,
-          humidity: 65,
-          condition: 'Partly Cloudy',
-          description: 'partly cloudy',
-          feels_like: 35,
-          wind_speed: 3.5,
-          pressure: 1013,
-          forecast: [
-            { day: 'Today', high: 34, low: 25, condition: 'Sunny', datetime: new Date().toISOString(), temperature: 33, description: 'sunny', rain_probability: 10 },
-            { day: 'Tomorrow', high: 32, low: 24, condition: 'Cloudy', datetime: new Date(Date.now() + 86400000).toISOString(), temperature: 32, description: 'cloudy', rain_probability: 40 },
-            { day: 'Wed', high: 30, low: 23, condition: 'Rain', datetime: new Date(Date.now() + 172800000).toISOString(), temperature: 30, description: 'rain', rain_probability: 80 }
-          ]
-        },
-        resource_summary: {
-          total_water_used_liters: 1250,
-          water_budget_liters: 10000,
-          water_usage_percentage: 12.5,
-          total_water_saved_liters: 850,
-          total_cost_rupees: 4500,
-          total_fertilizer_used_grams: 15500,
-          status: 'OK',
-          message: 'Resource usage within normal limits'
-        },
-        recent_alerts: [
-          { id: 1, message_en: 'Soil moisture low - irrigate now', type: 'WARNING', channel: 'whatsapp', created_at: new Date(Date.now() - 3600000).toISOString(), is_read: false },
-          { id: 2, message_en: 'Rain expected tomorrow', type: 'INFO', channel: 'sms', created_at: new Date(Date.now() - 7200000).toISOString(), is_read: false }
-        ]
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleIrrigate = () => {
-    // TODO: Implement irrigation trigger
-    alert('Irrigation triggered! (Demo)')
-  }
+    fetchMetrics();
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchMetrics, 30000);
+    return () => clearInterval(interval);
+  }, [t]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 size={48} className="animate-spin text-primary-500" />
-      </div>
-    )
+     return (
+       <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
+          <Loader2 className="animate-spin text-emerald-500 w-12 h-12" />
+       </div>
+     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-        <button
-          onClick={fetchMetrics}
-          className="btn-secondary text-sm"
-        >
-          Refresh
-        </button>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
-          {error}
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.4, ease: "easeOut", staggerChildren: 0.15 }}
+      className="p-4 sm:p-8 max-w-[1400px] mx-auto space-y-6"
+    >
+      <div className="flex items-center justify-between mb-8 relative z-10 border-b border-emerald-500/20 pb-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-emerald-500/20 rounded-xl border border-emerald-500/50 flex items-center justify-center">
+            <div className="w-6 h-6 border-t-2 border-l-2 border-emerald-400 rotate-45"></div>
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+               {t('dashboard.command_center')}
+            </h1>
+            <p className="text-emerald-600 dark:text-emerald-400 mt-1 font-mono text-sm tracking-widest uppercase">
+               {t('dashboard.telemetry_active')}
+            </p>
+          </div>
         </div>
-      )}
-
-      {/* Quick Actions */}
-      <div className="mb-6">
-        <QuickActions
-          sensorData={metrics?.current_sensor_data}
-          onIrrigate={handleIrrigate}
-        />
       </div>
 
-      {/* Main Grid */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        <SensorGrid sensorData={metrics?.current_sensor_data} />
-        <WeatherWidget weather={metrics?.weather} />
-      </div>
+      <AlertBanner alerts={metrics?.recent_alerts} />
+      
+      {/* Dynamic Command Grid Layout */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="grid grid-cols-1 gap-8 mt-8"
+      >
+         
+         {/* Traditional Hardware Telemetry */}
+         <div className="flex flex-col gap-8 relative z-10">
+            <div className="bg-transparent border border-gray-700/50 relative overflow-hidden">
+               <div className="absolute top-0 left-0 w-32 h-[1px] bg-emerald-500" />
+               <div className="bg-gray-800/80 px-6 py-2 border-b border-gray-700/50 w-full inline-block backdrop-blur-md">
+                 <h2 className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+                    {t('dashboard.live_sensors')}
+                 </h2>
+               </div>
+               <div className="p-6">
+                 <SensorCards data={metrics?.current_sensor_data} />
+               </div>
+            </div>
 
-      {/* Resource Metrics & Alerts */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <ResourceMetrics resourceSummary={metrics?.resource_summary} />
-        <AlertList alerts={metrics?.recent_alerts} />
-      </div>
-    </div>
-  )
-}
+            <div className="bg-transparent border border-gray-700/50 relative overflow-hidden mt-4">
+               <div className="absolute top-0 right-0 w-32 h-[1px] bg-orange-500" />
+               <div className="bg-gray-800/80 px-6 py-2 border-b border-gray-700/50 w-full inline-block backdrop-blur-md">
+                 <h2 className="text-xs font-mono font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-none"></span>
+                    {t('dashboard.resource_util')}
+                 </h2>
+               </div>
+               <div className="p-6">
+                 <ResourceMetrics data={metrics?.resource_summary} />
+               </div>
+            </div>
+         </div>
 
-export default Dashboard
+      </motion.div>
+    </motion.div>
+  );
+};
+
+export default Dashboard;

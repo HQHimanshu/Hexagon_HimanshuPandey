@@ -63,13 +63,13 @@ export const syncPendingData = async () => {
 
 // Manual sync fallback
 const manualSync = async (items) => {
-  const { sensorAPI } = await import('./api')
+  const api = (await import('../utils/api')).default;
   
   const sensorReadings = items.filter(item => item.type === 'sensor_reading')
   
   for (const item of sensorReadings) {
     try {
-      await sensorAPI.create(item.data)
+      await api.post('/sensors', item.data)
     } catch (err) {
       console.error('Failed to sync item:', err)
       // Keep in queue for next attempt
@@ -85,8 +85,8 @@ const manualSync = async (items) => {
 export const storeSensorReading = async (sensorData) => {
   if (isOnline) {
     try {
-      const { sensorAPI } = await import('./api')
-      return await sensorAPI.create(sensorData)
+      const api = (await import('../utils/api')).default;
+      return await api.post('/sensors', sensorData);
     } catch (err) {
       console.error('Failed to send sensor data:', err)
       // Queue for later

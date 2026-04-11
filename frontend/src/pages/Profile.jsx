@@ -1,131 +1,22 @@
-import React from 'react'
-import { useAuth } from '../App'
-import ProfileSetup from '../components/auth/ProfileSetup'
-import LanguageToggle from '../components/common/LanguageToggle'
-import ThemeToggle from '../components/common/ThemeToggle'
-import { User, Phone, MapPin, Sprout, Ruler, Settings, LogOut } from 'lucide-react'
-import { CROP_TYPES, SUPPORTED_LANGUAGES } from '../utils/constants'
+import React from 'react';
+import { User, LogOut } from 'lucide-react';
 
 const Profile = () => {
-  const { user, logout, updateUser } = useAuth()
-
-  const getCropLabel = (value) => {
-    const crop = CROP_TYPES.find(c => c.value === value)
-    return crop ? `${crop.icon} ${crop.label}` : value
-  }
-
-  const getLanguageName = (code) => {
-    return SUPPORTED_LANGUAGES[code]?.name || code
-  }
-
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-white mb-6 flex items-center space-x-2">
-        <User size={32} />
-        <span>Profile</span>
-      </h1>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Profile Info */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-            <User size={20} />
-            <span>Your Information</span>
-          </h3>
-
-          <div className="space-y-4">
-            <div className="bg-gray-700/50 rounded-lg p-4 flex items-center space-x-3">
-              <Phone className="text-primary-400" size={20} />
-              <div>
-                <div className="text-gray-400 text-xs">Phone</div>
-                <div className="text-white">{user?.phone}</div>
-              </div>
-            </div>
-
-            {user?.name && (
-              <div className="bg-gray-700/50 rounded-lg p-4 flex items-center space-x-3">
-                <User className="text-blue-400" size={20} />
-                <div>
-                  <div className="text-gray-400 text-xs">Name</div>
-                  <div className="text-white">{user.name}</div>
-                </div>
-              </div>
-            )}
-
-            {user?.crop_type && (
-              <div className="bg-gray-700/50 rounded-lg p-4 flex items-center space-x-3">
-                <Sprout className="text-green-400" size={20} />
-                <div>
-                  <div className="text-gray-400 text-xs">Crop Type</div>
-                  <div className="text-white">{getCropLabel(user.crop_type)}</div>
-                </div>
-              </div>
-            )}
-
-            {user?.farm_area_acres && (
-              <div className="bg-gray-700/50 rounded-lg p-4 flex items-center space-x-3">
-                <Ruler className="text-amber-400" size={20} />
-                <div>
-                  <div className="text-gray-400 text-xs">Farm Area</div>
-                  <div className="text-white">{user.farm_area_acres} acres</div>
-                </div>
-              </div>
-            )}
-
-            {user?.location_lat && user?.location_lng && (
-              <div className="bg-gray-700/50 rounded-lg p-4 flex items-center space-x-3">
-                <MapPin className="text-red-400" size={20} />
-                <div>
-                  <div className="text-gray-400 text-xs">Location</div>
-                  <div className="text-white">
-                    {user.location_lat.toFixed(4)}, {user.location_lng.toFixed(4)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="bg-gray-700/50 rounded-lg p-4 flex items-center space-x-3">
-              <Settings className="text-purple-400" size={20} />
-              <div>
-                <div className="text-gray-400 text-xs">Language</div>
-                <div className="text-white">{getLanguageName(user?.language || 'en')}</div>
-              </div>
-            </div>
-          </div>
+    <div className="p-4 sm:p-8 max-w-2xl mx-auto mt-10">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+        <div className="w-24 h-24 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-full mx-auto flex items-center justify-center text-white mb-4">
+          <User size={40} />
         </div>
-
-        {/* Settings */}
-        <div className="space-y-6">
-          {/* Profile Setup */}
-          <ProfileSetup onComplete={() => {}} />
-
-          {/* Quick Settings */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-white mb-4">⚙️ Quick Settings</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between bg-gray-700/50 rounded-lg p-3">
-                <span className="text-gray-300">Language</span>
-                <LanguageToggle />
-              </div>
-              <div className="flex items-center justify-between bg-gray-700/50 rounded-lg p-3">
-                <span className="text-gray-300">Theme</span>
-                <ThemeToggle />
-              </div>
-            </div>
-          </div>
-
-          {/* Logout */}
-          <button
-            onClick={logout}
-            className="w-full bg-red-600 hover:bg-red-700 text-white rounded-lg p-4 flex items-center justify-center space-x-2 transition-colors"
-          >
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
-        </div>
+        <h2 className="text-2xl font-bold dark:text-white mb-1">Farmer Pro</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">+91 98765 43210</p>
+        
+        <button className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors">
+          <LogOut size={20} /> Log out
+        </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

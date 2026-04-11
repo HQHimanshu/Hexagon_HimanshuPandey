@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -19,25 +20,30 @@ export default {
           800: '#1B5E20',
           900: '#0D3B0F',
         },
-        accent: {
-          50: '#FFF8E1',
-          100: '#FFECB3',
-          200: '#FFE082',
-          300: '#FFD54F',
-          400: '#FFCA28',
-          500: '#FFC107',
-          600: '#FFB300',
-          700: '#FFA000',
-          800: '#FF8F00',
-          900: '#FF6F00',
-        }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      }
+        blob: "blob 7s infinite",
+      },
+      keyframes: {
+        blob: {
+          "0%": {
+            transform: "translate(0px, 0px) scale(1)",
+          },
+          "33%": {
+            transform: "translate(30px, -50px) scale(1.1)",
+          },
+          "66%": {
+            transform: "translate(-20px, 20px) scale(0.9)",
+          },
+          "100%": {
+            transform: "translate(0px, 0px) scale(1)",
+          },
+        },
+      },
     },
   },
   plugins: [],

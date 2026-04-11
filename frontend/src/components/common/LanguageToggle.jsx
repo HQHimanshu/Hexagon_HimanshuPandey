@@ -1,54 +1,61 @@
-import React from 'react'
-import { useTranslation } from 'react-i18next'
-import { useAuth } from '../../App'
-import { Languages } from 'lucide-react'
-import { SUPPORTED_LANGUAGES } from '../../utils/constants'
+import React, { useState } from 'react';
+import { Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const languages = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'हिंदी' },
+  { code: 'mr', label: 'मराठी' }
+];
 
 const LanguageToggle = () => {
-  const { i18n } = useTranslation()
-  const { user, updateUser } = useAuth()
-  const [isOpen, setIsOpen] = React.useState(false)
+  const { i18n } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const changeLanguage = async (lang) => {
-    await i18n.changeLanguage(lang)
-    if (user) {
-      updateUser({ language: lang })
-    }
-    setIsOpen(false)
-  }
-
-  const currentLang = SUPPORTED_LANGUAGES[i18n.language] || SUPPORTED_LANGUAGES.en
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+    setIsOpen(false);
+  };
 
   return (
     <div className="relative">
-      <button
+      <motion.button 
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+        className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
       >
-        <Languages size={18} />
-        <span className="hidden sm:inline">{currentLang.flag} {currentLang.name}</span>
-      </button>
+        <Globe size={18} />
+        <span className="text-sm font-medium uppercase">{i18n.language || 'EN'}</span>
+      </motion.button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 animate-fadeIn z-50">
-          <div className="py-1">
-            {Object.entries(SUPPORTED_LANGUAGES).map(([code, lang]) => (
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50"
+          >
+            {languages.map((lang) => (
               <button
-                key={code}
-                onClick={() => changeLanguage(code)}
-                className={`w-full text-left px-4 py-2 hover:bg-gray-700 transition-colors flex items-center space-x-2 ${
-                  i18n.language === code ? 'bg-primary-500 text-white' : 'text-gray-300'
+                key={lang.code}
+                onClick={() => changeLanguage(lang.code)}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                  i18n.language === lang.code 
+                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium' 
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                 }`}
               >
-                <span>{lang.flag}</span>
-                <span>{lang.name}</span>
+                {lang.label}
               </button>
             ))}
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
-  )
-}
+  );
+};
 
-export default LanguageToggle
+export default LanguageToggle;
