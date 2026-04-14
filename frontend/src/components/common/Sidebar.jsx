@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, LayoutDashboard, BarChart3, Lightbulb, Activity, Users, Info } from 'lucide-react';
+import { Home, LayoutDashboard, BarChart3, Lightbulb, Activity, Users, Info, User, Bell } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
@@ -29,6 +29,8 @@ const Sidebar = () => {
     { path: '/suggestions', icon: Lightbulb, label: t('nav.suggestions') },
     { path: '/sensors', icon: Activity, label: t('nav.sensors') },
     { path: '/awareness', icon: Users, label: t('nav.awareness') },
+    { path: '/notifications', icon: Bell, label: t('nav.notifications') },
+    { path: '/profile', icon: User, label: t('nav.profile') },
     { path: '/about', icon: Info, label: t('nav.about') },
   ];
 

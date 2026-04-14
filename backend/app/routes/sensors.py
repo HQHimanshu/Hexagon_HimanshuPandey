@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from typing import Optional
@@ -11,6 +11,17 @@ from app.services import notification_service
 from app.utils.helpers import calculate_moisture_percentage
 
 router = APIRouter()
+
+
+async def get_user_id_or_demo(request: Request, db: AsyncSession):
+    """Get user ID from JWT or return first user for demo"""
+    try:
+        return await verify_token(request)
+    except:
+        # Demo mode - return first user
+        result = await db.execute(select(User).order_by(User.id.asc()).limit(1))
+        user = result.scalar_one_or_none()
+        return user.id if user else 1
 
 
 @router.post("/", response_model=SensorResponse, status_code=status.HTTP_201_CREATED)
@@ -57,10 +68,11 @@ async def create_sensor_reading(
 
 @router.get("/latest", response_model=SensorResponse)
 async def get_latest_reading(
-    user_id: int = Depends(verify_token),
+    req: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """Get latest sensor reading for user"""
+    user_id = await get_user_id_or_demo(req, db)
     
     result = await db.execute(
         select(SensorReading)
@@ -81,11 +93,12 @@ async def get_latest_reading(
 
 @router.get("/history", response_model=SensorHistoryResponse)
 async def get_sensor_history(
-    hours: int = Query(default=24, ge=1, le=168),  # Max 7 days
-    user_id: int = Depends(verify_token),
+    req: Request,
+    hours: int = Query(default=24, ge=1, le=168),
     db: AsyncSession = Depends(get_db)
 ):
     """Get sensor history for specified time period"""
+    user_id = await get_user_id_or_demo(req, db)
     
     # Calculate start time
     start_time = datetime.utcnow() - timedelta(hours=hours)

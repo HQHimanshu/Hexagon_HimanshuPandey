@@ -26,27 +26,27 @@ export const queueForSync = (type, data) => {
     data,
     timestamp: new Date().toISOString()
   }
-  
+
   offlineQueue.push(item)
-  
+
   // Store in localStorage for persistence
   const stored = JSON.parse(localStorage.getItem('offline_queue') || '[]')
   stored.push(item)
   localStorage.setItem('offline_queue', JSON.stringify(stored))
-  
+
   return item
 }
 
 // Sync pending data when back online
 export const syncPendingData = async () => {
   if (!isOnline) return
-  
+
   const stored = JSON.parse(localStorage.getItem('offline_queue') || '[]')
-  
+
   if (stored.length === 0) return
-  
+
   console.log(`Syncing ${stored.length} pending items...`)
-  
+
   // Request background sync if available
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
     try {
@@ -63,20 +63,20 @@ export const syncPendingData = async () => {
 
 // Manual sync fallback
 const manualSync = async (items) => {
-  const api = (await import('../utils/api')).default;
-  
+  const { sensorAPI } = await import('./api')
+
   const sensorReadings = items.filter(item => item.type === 'sensor_reading')
-  
+
   for (const item of sensorReadings) {
     try {
-      await api.post('/sensors', item.data)
+      await sensorAPI.create(item.data)
     } catch (err) {
       console.error('Failed to sync item:', err)
       // Keep in queue for next attempt
       return
     }
   }
-  
+
   // Clear synced items
   localStorage.removeItem('offline_queue')
 }
@@ -85,8 +85,8 @@ const manualSync = async (items) => {
 export const storeSensorReading = async (sensorData) => {
   if (isOnline) {
     try {
-      const api = (await import('../utils/api')).default;
-      return await api.post('/sensors', sensorData);
+      const { sensorAPI } = await import('./api')
+      return await sensorAPI.create(sensorData)
     } catch (err) {
       console.error('Failed to send sensor data:', err)
       // Queue for later

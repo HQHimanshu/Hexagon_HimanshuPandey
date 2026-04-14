@@ -14,8 +14,11 @@ class Settings(BaseSettings):
     
     # AI
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "qwen2.5:7b-instruct"
+    OLLAMA_MODEL: str = "qwen2.5:1.5b"  # Changed to match installed model
     RAG_COLLECTION_NAME: str = "crop_knowledge_maharashtra"
+    RAG_CHUNK_SIZE: int = 500
+    RAG_CHUNK_OVERLAP: int = 50
+    RAG_TOP_K: int = 3
     
     # APIs
     OPENWEATHER_API_KEY: str = ""

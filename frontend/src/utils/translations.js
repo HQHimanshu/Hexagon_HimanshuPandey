@@ -11,6 +11,8 @@ const resources = {
       "nav.suggestions": "Suggestions",
       "nav.sensors": "Sensors",
       "nav.awareness": "Awareness",
+      "nav.notifications": "Alerts",
+      "nav.profile": "Profile",
       "nav.about": "About",
       "global.system_online": "SYSTEM ONLINE // KRISHI-PROTOCOL V3",
       "global.precision_agriculture": "KRISHI",

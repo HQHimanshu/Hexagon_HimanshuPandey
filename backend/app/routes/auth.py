@@ -3,10 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta
 from app.database import get_db
-from app.models import User, OTPVerification
+from app.models import User, OTPVerification, Alert
 from app.schemas import OTPRequest, OTPVerify, TokenResponse, UserResponse
 from app.security import create_access_token, generate_otp
 from app.utils.validators import validate_phone
+from app.utils.translations import get_welcome_message
 
 router = APIRouter()
 
@@ -104,13 +105,33 @@ async def verify_otp(
         select(User).where(User.phone == otp_verify.phone)
     )
     user = result.scalar_one_or_none()
-    
+    is_new_user = False
+
     if not user:
         user = User(phone=otp_verify.phone)
         db.add(user)
         await db.commit()
         await db.refresh(user)
-    
+        is_new_user = True
+
+    # Create welcome notification for new users
+    if is_new_user:
+        welcome_messages = get_welcome_message()
+        welcome_alert = Alert(
+            user_id=user.id,
+            timestamp=datetime.utcnow(),
+            type="INFO",
+            channel="app",
+            message_en=welcome_messages['en'],
+            message_hi=welcome_messages['hi'],
+            message_mr=welcome_messages['mr'],
+            status="SENT",
+            is_read=False
+        )
+        db.add(welcome_alert)
+        await db.commit()
+        print(f"🎉 Welcome notification created for new user: {user.phone}")
+
     # Create JWT token
     access_token = create_access_token(
         data={"sub": user.id},

@@ -1,32 +1,31 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Droplet, Thermometer, Wind, CloudRain } from 'lucide-react';
+import { Droplets, Thermometer, CloudRain } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const SensorCards = ({ data }) => {
   const { t } = useTranslation();
 
-  // If the fastAPI backend doesn't return data, we show empty placeholders.
   const cards = [
-    { 
-      title: t('sensor.soil_moisture'), 
-      value: data?.soil_moisture_root ? `${data.soil_moisture_root}%` : '--', 
-      icon: Droplet, color: 'text-blue-400', shadow: 'rgba(59,130,246,0.3)', bg: 'bg-blue-500/10' 
+    {
+      title: t('sensor.temperature'),
+      value: data?.temperature ? `${data.temperature}°C` : '--',
+      icon: Thermometer, color: 'text-orange-400', shadow: 'rgba(249,115,22,0.3)', bg: 'bg-orange-500/10'
     },
-    { 
-      title: t('sensor.temperature'), 
-      value: data?.temperature ? `${data.temperature}°C` : '--', 
-      icon: Thermometer, color: 'text-orange-400', shadow: 'rgba(249,115,22,0.3)', bg: 'bg-orange-500/10' 
+    {
+      title: t('sensor.humidity'),
+      value: data?.humidity ? `${data.humidity}%` : '--',
+      icon: Droplets, color: 'text-teal-400', shadow: 'rgba(20,184,166,0.3)', bg: 'bg-teal-500/10'
     },
-    { 
-      title: t('sensor.humidity'), 
-      value: data?.humidity ? `${data.humidity}%` : '--', 
-      icon: Wind, color: 'text-teal-400', shadow: 'rgba(20,184,166,0.3)', bg: 'bg-teal-500/10' 
+    {
+      title: t('sensor.soil_moisture'),
+      value: data?.soil_moisture_root ? `${((1 - data.soil_moisture_root / 1023) * 100).toFixed(0)}%` : '--',
+      icon: CloudRain, color: 'text-blue-400', shadow: 'rgba(59,130,246,0.3)', bg: 'bg-blue-500/10'
     },
-    { 
-      title: t('sensor.rain'), 
-      value: data?.rain_detected ? t('sensor.status.high') : t('sensor.status.normal'), 
-      icon: CloudRain, color: 'text-indigo-400', shadow: 'rgba(99,102,241,0.3)', bg: 'bg-indigo-500/10' 
+    {
+      title: t('sensor.rain'),
+      value: data?.rain_detected ? 'RAINING' : 'DRY',
+      icon: CloudRain, color: data?.rain_detected ? 'text-indigo-400' : 'text-gray-500', shadow: 'rgba(99,102,241,0.3)', bg: data?.rain_detected ? 'bg-indigo-500/20' : 'bg-gray-500/10'
     },
   ];
 

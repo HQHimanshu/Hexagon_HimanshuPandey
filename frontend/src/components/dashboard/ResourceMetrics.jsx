@@ -1,72 +1,104 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
+import { Droplets, TrendingUp, TrendingDown, IndianRupee } from 'lucide-react';
+import { formatVolume, formatWeight, formatCurrency } from '../../utils/formatters';
 
 const ResourceMetrics = ({ data }) => {
-  const { t } = useTranslation();
-  
-  // Real stats from DB logic or fallback
-  const waterEff = data?.water_saved_liters ? `${data.water_saved_liters}%` : '85%';
-  const powerCon = data?.power_used_percent ? `${data.power_used_percent}%` : '62%';
-  const fertOpti = data?.fertilizer_efficiency ? `${data.fertilizer_efficiency}%` : '92%';
+  if (!data) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No resource data available</p>
+      </div>
+    );
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'OK': return 'text-emerald-400';
+      case 'WARNING': return 'text-amber-400';
+      case 'CRITICAL': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
 
   return (
-    <div className="relative bg-gray-900/40 backdrop-blur-md rounded-xl p-6 border border-emerald-500/20 overflow-hidden group">
-      <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-emerald-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-emerald-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-      
-      <div className="space-y-6 mt-4 relative z-10">
-        <div>
-          <div className="flex justify-between text-xs font-mono uppercase tracking-widest mb-2">
-            <span className="text-gray-400">{t('resource.water_eff')}</span>
-            <span className="text-emerald-400 font-bold drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">{waterEff}</span>
+    <div className="space-y-4">
+      {/* Water Usage */}
+      <div className="p-4 bg-gray-900/50 rounded-xl border border-gray-700/50">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Droplets className="text-blue-400" size={18} />
+            <span className="text-gray-300 text-sm font-semibold">Water Usage</span>
           </div>
-          <div className="w-full bg-gray-800 rounded-none h-2 overflow-hidden border border-emerald-900/50">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: waterEff }}
-              transition={{ duration: 1.5, type: "spring", stiffness: 50, delay: 0.2 }}
-              className="bg-emerald-500 h-full shadow-[0_0_10px_rgba(16,185,129,0.8)] relative"
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:10px_10px] animate-[pulse_2s_linear_infinite]"></div>
-            </motion.div>
+          <div className="text-right">
+            <div className="text-white font-bold">{formatVolume(data.total_water_used_liters)}</div>
+            <div className="text-gray-500 text-xs">of {formatVolume(data.water_budget_liters)} budget</div>
           </div>
         </div>
 
-        <div>
-          <div className="flex justify-between text-xs font-mono uppercase tracking-widest mb-2">
-            <span className="text-gray-400">{t('resource.power_con')}</span>
-            <span className="text-orange-400 font-bold drop-shadow-[0_0_5px_rgba(249,115,22,0.5)]">{powerCon}</span>
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(100, data.water_usage_percentage)}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className={`h-full rounded-full ${
+              data.water_usage_percentage >= 100 ? 'bg-red-500' :
+              data.water_usage_percentage >= 80 ? 'bg-amber-500' : 'bg-emerald-500'
+            }`}
+          />
+        </div>
+        <div className="text-gray-400 text-xs mt-2 font-mono">
+          {data.water_usage_percentage.toFixed(1)}% used
+        </div>
+      </div>
+
+      {/* Savings Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-3 bg-emerald-900/20 rounded-xl border border-emerald-700/30">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="text-emerald-400" size={16} />
+            <span className="text-gray-400 text-xs font-semibold">Water Saved</span>
           </div>
-          <div className="w-full bg-gray-800 rounded-none h-2 overflow-hidden border border-orange-900/50">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: powerCon }}
-              transition={{ duration: 1.5, type: "spring", stiffness: 50, delay: 0.4 }}
-              className="bg-orange-500 h-full shadow-[0_0_10px_rgba(249,115,22,0.8)] relative"
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:10px_10px] animate-[pulse_2s_linear_infinite]"></div>
-            </motion.div>
+          <div className="text-emerald-400 font-bold text-lg font-mono">
+            {formatVolume(data.total_water_saved_liters)}
           </div>
         </div>
 
-        <div>
-          <div className="flex justify-between text-xs font-mono uppercase tracking-widest mb-2">
-            <span className="text-gray-400">{t('resource.fert_optimum')}</span>
-            <span className="text-indigo-400 font-bold drop-shadow-[0_0_5px_rgba(99,102,241,0.5)]">{fertOpti}</span>
+        <div className="p-3 bg-purple-900/20 rounded-xl border border-purple-700/30">
+          <div className="flex items-center gap-2 mb-2">
+            <IndianRupee className="text-purple-400" size={16} />
+            <span className="text-gray-400 text-xs font-semibold">Total Cost</span>
           </div>
-          <div className="w-full bg-gray-800 rounded-none h-2 overflow-hidden border border-indigo-900/50">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: fertOpti }}
-              transition={{ duration: 1.5, type: "spring", stiffness: 50, delay: 0.6 }}
-              className="bg-indigo-500 h-full shadow-[0_0_10px_rgba(99,102,241,0.8)] relative"
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:10px_10px] animate-[pulse_2s_linear_infinite]"></div>
-            </motion.div>
+          <div className="text-purple-400 font-bold text-lg font-mono">
+            {formatCurrency(data.total_cost_rupees)}
           </div>
         </div>
       </div>
+
+      {/* Fertilizer */}
+      <div className="p-3 bg-amber-900/20 rounded-xl border border-amber-700/30 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <TrendingDown className="text-amber-400" size={16} />
+          <span className="text-gray-400 text-xs font-semibold">Fertilizer Used</span>
+        </div>
+        <div className="text-amber-400 font-bold font-mono">
+          {formatWeight(data.total_fertilizer_used_grams)}
+        </div>
+      </div>
+
+      {/* Status Message */}
+      {data.message && (
+        <div className={`p-3 rounded-xl border text-sm ${
+          data.status === 'CRITICAL'
+            ? 'bg-red-900/20 border-red-700/30 text-red-300'
+            : data.status === 'WARNING'
+            ? 'bg-amber-900/20 border-amber-700/30 text-amber-300'
+            : 'bg-emerald-900/20 border-emerald-700/30 text-emerald-300'
+        }`}>
+          <span className={`font-bold ${getStatusColor(data.status)}`}>[{data.status}]</span> {data.message}
+        </div>
+      )}
     </div>
   );
 };

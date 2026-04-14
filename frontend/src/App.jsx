@@ -15,9 +15,11 @@ import Dashboard from './pages/Dashboard'
 import Analytics from './pages/Analytics'
 import Suggestions from './pages/Suggestions'
 import Sensors from './pages/Sensors'
+import SensorDetail from './pages/SensorDetail'
 import Awareness from './pages/Awareness'
 import About from './pages/About'
 import Profile from './pages/Profile'
+import Notifications from './pages/Notifications'
 
 // Auth Pages
 import LoginPage from './components/auth/LoginPage'
@@ -48,8 +50,11 @@ const AnimatedRoutes = ({ user }) => {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/suggestions" element={<Suggestions />} />
         <Route path="/sensors" element={<Sensors />} />
+        <Route path="/sensors/:sensorId" element={<SensorDetail />} />
         <Route path="/awareness" element={<Awareness />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </AnimatePresence>
   );

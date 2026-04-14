@@ -1,38 +1,59 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Power, Settings, Droplet, Sprout } from 'lucide-react';
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Droplets, MessageSquare, BarChart3, CloudRain } from 'lucide-react'
 
-import { useTranslation } from 'react-i18next';
+const QuickActions = ({ sensorData, onIrrigate }) => {
+  const navigate = useNavigate()
 
-const QuickActions = () => {
-  const { t } = useTranslation();
-  
   const actions = [
-    { label: t('quick.pump'), icon: Power, border: 'border-emerald-500', text: 'text-emerald-400', hoverBg: 'hover:bg-emerald-500/20' },
-    { label: t('quick.fertigate'), icon: Sprout, border: 'border-indigo-500', text: 'text-indigo-400', hoverBg: 'hover:bg-indigo-500/20' },
-    { label: t('quick.water'), icon: Droplet, border: 'border-blue-500', text: 'text-blue-400', hoverBg: 'hover:bg-blue-500/20' },
-    { label: t('quick.settings'), icon: Settings, border: 'border-gray-500', text: 'text-gray-400', hoverBg: 'hover:bg-gray-500/20' },
-  ];
+    {
+      icon: Droplets,
+      label: 'Irrigate Now',
+      color: 'bg-blue-600 hover:bg-blue-700',
+      action: onIrrigate,
+      disabled: sensorData?.rain_detected
+    },
+    {
+      icon: MessageSquare,
+      label: 'Get AI Advice',
+      color: 'bg-primary-600 hover:bg-primary-700',
+      action: () => navigate('/advice')
+    },
+    {
+      icon: BarChart3,
+      label: 'View Analytics',
+      color: 'bg-purple-600 hover:bg-purple-700',
+      action: () => navigate('/analytics')
+    },
+    {
+      icon: CloudRain,
+      label: 'Weather Forecast',
+      color: 'bg-cyan-600 hover:bg-cyan-700',
+      action: () => navigate('/dashboard')
+    }
+  ]
 
   return (
-    <div className="bg-gray-900/40 backdrop-blur-md rounded-xl p-6 shadow-sm border border-emerald-500/20">
-      <h3 className="font-mono text-sm tracking-widest font-bold text-emerald-400 mb-4 uppercase">{t('quick.title')}</h3>
-      <div className="grid grid-cols-2 gap-4">
-        {actions.map((action, index) => (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.95 }}
-            key={index}
-            className={`relative flex flex-col items-center justify-center gap-3 p-4 border rounded-none transition-all ${action.border} ${action.text} ${action.hoverBg} hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] bg-transparent group overflow-hidden`}
-          >
-            <div className={`absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
-            <action.icon size={24} className="z-10" />
-            <span className="text-xs font-mono tracking-widest uppercase z-10">{action.label}</span>
-          </motion.button>
-        ))}
+    <div className="card">
+      <h3 className="text-lg font-semibold text-white mb-4">⚡ Quick Actions</h3>
+      <div className="grid grid-cols-2 gap-3">
+        {actions.map((action, index) => {
+          const Icon = action.icon
+          return (
+            <button
+              key={index}
+              onClick={action.action}
+              disabled={action.disabled}
+              className={`${action.color} text-white rounded-lg p-4 flex flex-col items-center space-y-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <Icon size={28} />
+              <span className="text-sm font-medium">{action.label}</span>
+            </button>
+          )
+        })}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default QuickActions;
+export default QuickActions

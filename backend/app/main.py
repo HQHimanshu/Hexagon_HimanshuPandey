@@ -4,28 +4,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
 from app.database import init_db, close_db
-from app.routes import auth, sensors, advice, weather, notifications, resources, dashboard
+from app.routes import auth, sensors, advice, weather, notifications, resources, dashboard, knowledge
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize database
     await init_db()
-    print("✅ Database initialized")
-    
-    # Initialize RAG knowledge base
-    try:
-        from app.services.rag_service import init_knowledge_base
-        await init_knowledge_base()
-        print("✅ RAG knowledge base loaded")
-    except Exception as e:
-        print(f"⚠️  RAG initialization warning: {e}")
-    
+    print("[OK] Database initialized")
+
+    # Initialize RAG knowledge base (OPTIONAL - disabled for speed)
+    # RAG is available on-demand via /api/knowledge endpoints
+    print("[INFO] RAG knowledge base disabled for speed - using direct Qwen responses")
+
     yield
-    
+
     # Shutdown: Close database
     await close_db()
-    print("✅ Database closed")
+    print("[OK] Database closed")
 
 
 app = FastAPI(
@@ -74,6 +70,7 @@ app.include_router(weather.router, prefix="/api/weather", tags=["Weather"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(resources.router, prefix="/api/resources", tags=["Resources"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(knowledge.router, tags=["Knowledge Base"])
 
 
 if __name__ == "__main__":

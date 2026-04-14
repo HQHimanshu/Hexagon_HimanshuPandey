@@ -19,7 +19,12 @@ TRANSLATIONS = {
         "irrigate_now": "अभी सिंचाई करें",
         "wait": "प्रतीक्षा करें",
         "fertilize": "उर्वरक डालें",
-        
+
+        # Welcome messages
+        "welcome_en": "Welcome to KrishiDrishti! 🌾 Your smart farming journey starts now.",
+        "welcome_hi": "KrishiDrishti में आपका स्वागत है! 🌾 आपकी स्मार्ट खेती की यात्रा अब शुरू होती है।",
+        "welcome_mr": "KrishiDrishti मध्ये आपले स्वागत आहे! 🌾 तुमची स्मार्ट शेतकरी यात्रा आता सुरू होते।",
+
         # Alert messages
         "alert_irrigate_now": "अभी सिंचाई करें - मिट्टी की नमी कम है",
         "alert_rain_detected": "बारिश का पता चला - सिंचाई की आवश्यकता नहीं",
@@ -156,3 +161,12 @@ def get_translation(key: str, language: str = "en") -> str:
 def get_alert_message(message_key: str, language: str = "en") -> str:
     """Get alert message in specified language"""
     return get_translation(f"alert_{message_key}", language)
+
+
+def get_welcome_message() -> dict:
+    """Get welcome message in all languages"""
+    return {
+        'en': TRANSLATIONS['en'].get('welcome_en', 'Welcome to KrishiDrishti!'),
+        'hi': TRANSLATIONS['hi'].get('welcome_hi', 'KrishiDrishti में आपका स्वागत है!'),
+        'mr': TRANSLATIONS['mr'].get('welcome_mr', 'KrishiDrishti मध्ये आपले स्वागत आहे!')
+    }

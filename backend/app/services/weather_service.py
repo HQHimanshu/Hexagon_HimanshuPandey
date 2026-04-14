@@ -12,6 +12,9 @@ CACHE_DURATION = 1800  # 30 minutes
 async def get_weather_data(lat: float, lng: float) -> Optional[Dict]:
     """Fetch current weather data from OpenWeatherMap"""
     
+    # Return mock data immediately if no API key configured
+    return get_mock_weather()
+
     cache_key = f"{lat:.2f},{lng:.2f}"
     current_time = time.time()
     

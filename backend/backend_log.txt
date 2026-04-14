@@ -1,0 +1,31 @@
+Failed to send telemetry event ClientStartEvent: capture() takes 1 positional argument but 3 were given
+INFO:     Started server process [9712]
+INFO:     Waiting for application startup.
+2026-04-11 13:02:52,632 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-04-11 13:02:52,632 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-04-11 13:02:52,632 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("sensor_readings")
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("resource_logs")
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("alerts")
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("advice_logs")
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("otp_verifications")
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-11 13:02:52,635 INFO sqlalchemy.engine.Engine COMMIT
+ERROR:    Traceback (most recent call last):
+  File "D:\Himanshu_Project\KrishiDrishti\backend\venv\Lib\site-packages\starlette\routing.py", line 738, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Himanshu_Project\KrishiDrishti\backend\app\main.py", line 14, in lifespan
+    print("\u2705 Database initialized")
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+
+ERROR:    Application startup failed. Exiting.
