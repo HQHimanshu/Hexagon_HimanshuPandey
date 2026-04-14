@@ -52,3 +52,5 @@ logs/
 .sw-precache-cache/
 
 backend/knowledge_base/
+
+backend/knowledge_base/datasets/fao_data_crops_data.csv
