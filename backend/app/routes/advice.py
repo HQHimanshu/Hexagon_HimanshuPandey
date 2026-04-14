@@ -4,7 +4,7 @@ from sqlalchemy import select, desc
 from app.database import get_db
 from app.models import User, AdviceLog
 from app.schemas import AdviceRequest, AdviceResponse, AdviceHistoryItem
-from app.security import verify_token
+# from app.security import verify_token  # Commented out for testing
 from app.services import ollama_service
 
 router = APIRouter()
@@ -12,21 +12,17 @@ router = APIRouter()
 
 async def get_user_id_or_demo(request: Request, db: AsyncSession):
     """Get user ID from JWT or return demo user"""
-    try:
-        token = await verify_token(request)
-        return token
-    except:
-        # Demo mode - return user 1 or create demo user
-        result = await db.execute(select(User).order_by(User.id.desc()).limit(1))
-        user = result.scalar_one_or_none()
-        if user:
-            return user.id
-        # Create demo user
-        demo_user = User(phone="+919876543210", name="Demo Farmer", language="en")
-        db.add(demo_user)
-        await db.commit()
-        await db.refresh(demo_user)
-        return demo_user.id
+    # For now, always return demo user
+    result = await db.execute(select(User).order_by(User.id.desc()).limit(1))
+    user = result.scalar_one_or_none()
+    if user:
+        return user.id
+    # Create demo user
+    demo_user = User(phone="+919876543210", name="Demo Farmer", language="en")
+    db.add(demo_user)
+    await db.commit()
+    await db.refresh(demo_user)
+    return demo_user.id
 
 
 @router.post("/", response_model=AdviceResponse)
