@@ -1,4 +1,4 @@
-crop,season,temperature_min,temperature_max,rainfall_mm,soil_ph,yield_kg_per_acre,fertilizer_npk,irrigation_days
+    crop,season,temperature_min,temperature_max,rainfall_mm,soil_ph,yield_kg_per_acre,fertilizer_npk,irrigation_days
 wheat,rabi,10,25,350,6.5,1800,120:60:40,15
 wheat,rabi,12,27,380,6.8,1950,120:60:40,14
 rice,kharif,20,35,1200,5.5,2200,80:40:40,7
