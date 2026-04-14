@@ -79,21 +79,39 @@ async def send_alert(user: User, message_key: str, data: dict = None) -> dict:
 async def send_whatsapp(phone: str, message: str) -> dict:
     """Send WhatsApp message via Twilio"""
     client = get_twilio_client()
-    
+
     if client is None:
         # Mock for development
         print(f"📱 [MOCK WhatsApp] To: {phone} | Message: {message}")
         return {"status": "MOCK_SENT", "phone": phone}
-    
+
     try:
+        # Format phone numbers for WhatsApp
+        from_number = settings.TWILIO_WHATSAPP_NUMBER
+        to_number = phone
+        
+        # Ensure proper formatting
+        if not from_number.startswith('whatsapp:'):
+            from_number = f"whatsapp:{from_number.lstrip('+')}" if not from_number.startswith('+') else f"whatsapp:+{from_number.lstrip('+')}"
+        
+        if not to_number.startswith('whatsapp:'):
+            to_number = f"whatsapp:{to_number}"
+        
         message_obj = client.messages.create(
-            from_=f"whatsapp:{settings.TWILIO_WHATSAPP_NUMBER}",
+            from_=from_number,
             body=message,
-            to=f"whatsapp:+91{phone.lstrip('+91')}"
+            to=to_number
         )
         return {"status": "SENT", "sid": message_obj.sid}
     except Exception as e:
-        return {"status": "FAILED", "error": str(e)}
+        error_msg = str(e)
+        # Check if it's a WhatsApp channel error
+        if "63007" in error_msg or "Channel" in error_msg:
+            # Fallback to mock mode
+            print(f"⚠️ WhatsApp channel not configured, using mock mode")
+            print(f"📱 [MOCK WhatsApp] To: {phone} | Message: {message}")
+            return {"status": "MOCK_SENT", "phone": phone, "note": "WhatsApp not configured, using mock"}
+        return {"status": "FAILED", "error": error_msg}
 
 
 async def send_sms(phone: str, message: str) -> dict:
@@ -121,14 +139,14 @@ async def send_email(email: str, message: str) -> dict:
     if not settings.SMTP_EMAIL or not settings.SMTP_PASSWORD:
         print(f"📧 [MOCK Email] To: {email} | Message: {message}")
         return {"status": "MOCK_SENT", "email": email}
-    
+
     try:
         msg = EmailMessage()
         msg["Subject"] = "KrishiDrishti Alert - कृषिदृष्टि सूचना"
         msg["From"] = settings.SMTP_EMAIL
         msg["To"] = email
         msg.set_content(message)
-        
+
         await aiosmtplib.send(
             msg,
             hostname=settings.SMTP_SERVER,
@@ -137,9 +155,53 @@ async def send_email(email: str, message: str) -> dict:
             username=settings.SMTP_EMAIL,
             password=settings.SMTP_PASSWORD
         )
-        
+
         return {"status": "SENT"}
     except Exception as e:
+        return {"status": "FAILED", "error": str(e)}
+
+
+async def send_email_otp(email: str, otp_code: str) -> dict:
+    """Send OTP via email"""
+    subject = "KrishiDrishti - Email OTP Verification"
+    message = f"""
+    🌾 KrishiDrishti - OTP Verification
+    
+    Your OTP code is: {otp_code}
+    
+    This code expires in 5 minutes.
+    
+    If you didn't request this code, please ignore this message.
+    
+    ---
+    KrishiDrishti - AI-Powered Smart Farming
+    """
+    
+    if not settings.SMTP_EMAIL or not settings.SMTP_PASSWORD:
+        # Fallback to console for development
+        print(f"📧 [MOCK Email OTP] To: {email} | OTP: {otp_code}")
+        return {"status": "MOCK_SENT", "email": email}
+    
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = subject
+        msg["From"] = settings.SMTP_EMAIL
+        msg["To"] = email
+        msg.set_content(message)
+
+        await aiosmtplib.send(
+            msg,
+            hostname=settings.SMTP_SERVER,
+            port=settings.SMTP_PORT,
+            start_tls=True,
+            username=settings.SMTP_EMAIL,
+            password=settings.SMTP_PASSWORD
+        )
+
+        print(f"✅ Email OTP sent to {email}")
+        return {"status": "SENT", "email": email}
+    except Exception as e:
+        print(f"⚠️ Failed to send email OTP: {e}")
         return {"status": "FAILED", "error": str(e)}
 
 

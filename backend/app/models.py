@@ -5,15 +5,17 @@ from app.database import Base
 
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    phone = Column(String(15), unique=True, nullable=False, index=True)
-    email = Column(String(120), nullable=True)
+    phone = Column(String(15), nullable=True, index=True)
+    email = Column(String(120), unique=True, nullable=False, index=True)
     name = Column(String(100), nullable=True)
     language = Column(String(5), default="hi")  # hi, mr, en
     location_lat = Column(Float, nullable=True)
     location_lng = Column(Float, nullable=True)
-    crop_type = Column(String(50), nullable=True)  # wheat, rice, cotton
+    region = Column(String(100), nullable=True)  # User's region/state
+    crops = Column(JSON, nullable=True)  # List of crops user is growing
+    crop_type = Column(String(50), nullable=True)  # wheat, rice, cotton (legacy)
     farm_area_acres = Column(Float, nullable=True)
     whatsapp_opt_in = Column(Boolean, default=True)
     sms_opt_in = Column(Boolean, default=True)

@@ -5,12 +5,14 @@ from datetime import datetime, date
 
 # User schemas
 class UserBase(BaseModel):
-    phone: str = Field(..., min_length=10, max_length=15)
+    phone: Optional[str] = Field(None, max_length=15)
     email: Optional[str] = None
     name: Optional[str] = None
     language: str = Field(default="hi", pattern="^(hi|mr|en)$")
     location_lat: Optional[float] = None
     location_lng: Optional[float] = None
+    region: Optional[str] = None
+    crops: Optional[List[str]] = None
     crop_type: Optional[str] = None
     farm_area_acres: Optional[float] = None
     whatsapp_opt_in: bool = True
@@ -23,12 +25,34 @@ class UserCreate(UserBase):
     pass
 
 
+class UserSignup(BaseModel):
+    """Schema for user signup with OTP verification"""
+    name: str = Field(..., min_length=2, max_length=100)
+    email: str = Field(..., min_length=5, max_length=120)
+    phone: Optional[str] = Field(None, max_length=15)
+    region: str = Field(..., min_length=2, max_length=100)
+    crops: List[str] = Field(default_factory=list)
+    language: str = Field(default="en", pattern="^(hi|mr|en)$")
+
+
 class UserResponse(UserBase):
     id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": 1,
+                "email": "user@example.com",
+                "name": "John Doe",
+                "phone": "+919876543210",
+                "region": "Maharashtra",
+                "crops": ["Rice", "Wheat"],
+                "language": "en",
+                "created_at": "2024-01-01T00:00:00"
+            }
+        }
 
 
 class UserUpdate(BaseModel):
@@ -54,10 +78,41 @@ class OTPVerify(BaseModel):
     otp_code: str = Field(..., min_length=6, max_length=6)
 
 
+class EmailOTPRequest(BaseModel):
+    """Request to send OTP for email login"""
+    email: str = Field(..., min_length=5, max_length=120)
+
+
+class EmailOTPVerify(BaseModel):
+    """Verify OTP for email login"""
+    email: str = Field(..., min_length=5, max_length=120)
+    otp_code: str = Field(..., min_length=6, max_length=6)
+
+
+class SignupOTPRequest(BaseModel):
+    """Request to send OTP for signup with user data"""
+    name: str = Field(..., min_length=2, max_length=100)
+    email: str = Field(..., min_length=5, max_length=120)
+    phone: Optional[str] = Field(None, max_length=15)
+    region: str = Field(..., min_length=2, max_length=100)
+    crops: Optional[List[str]] = None
+
+
+class SignupOTPVerify(BaseModel):
+    """Verify OTP for signup and create user"""
+    email: str = Field(..., min_length=5, max_length=120)
+    otp_code: str = Field(..., min_length=6, max_length=6)
+    name: str = Field(..., min_length=2, max_length=100)
+    phone: Optional[str] = Field(None, max_length=15)
+    region: str = Field(..., min_length=2, max_length=100)
+    crops: Optional[List[str]] = None
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+    is_new_user: bool = False
 
 
 # Sensor schemas

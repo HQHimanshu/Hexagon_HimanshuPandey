@@ -32,7 +32,9 @@
       "Bash(git show *)",
       "Bash(mkdir *)",
       "Bash(pip install *)",
-      "Bash(mode)"
+      "Bash(mode)",
+      "Bash(venv\\scripts\\activate)",
+      "Bash(.\\venv\\scripts\\python.exe *)"
     ]
   },
   "$version": 3

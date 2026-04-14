@@ -20,11 +20,10 @@ import Awareness from './pages/Awareness'
 import About from './pages/About'
 import Profile from './pages/Profile'
 import Notifications from './pages/Notifications'
+import Account from './pages/Account'
 
 // Auth Pages
-import LoginPage from './components/auth/LoginPage'
-import SignupPage from './components/auth/SignupPage'
-import OTPVerification from './components/auth/OTPVerification'
+import AuthPage from './components/auth/AuthPage'
 
 import { useTranslation } from 'react-i18next'
 
@@ -41,9 +40,8 @@ const AnimatedRoutes = ({ user }) => {
         <Route path="/about" element={<About />} />
         
         {/* Auth Routes */}
-        <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
-        <Route path="/signup" element={!user ? <SignupPage /> : <Navigate to="/dashboard" />} />
-        <Route path="/verify-otp" element={!user ? <OTPVerification /> : <Navigate to="/dashboard" />} />
+        <Route path="/login" element={!user ? <AuthPage /> : <Navigate to="/dashboard" />} />
+        <Route path="/signup" element={!user ? <Navigate to="/login" /> : <Navigate to="/dashboard" />} />
         
         {/* Protected Routes (config actual protection logic later) */}
         <Route path="/dashboard" element={<Dashboard />} />
@@ -54,6 +52,7 @@ const AnimatedRoutes = ({ user }) => {
         <Route path="/awareness" element={<Awareness />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/account" element={<Account />} />
         <Route path="/about" element={<About />} />
       </Routes>
     </AnimatePresence>
@@ -91,13 +90,13 @@ function App() {
   const { i18n } = useTranslation()
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('auth_token')
     const userData = localStorage.getItem('user')
-    
+
     if (token && userData) {
        setUser(JSON.parse(userData));
     }
-    
+
     setLoading(false)
   }, [i18n])
 

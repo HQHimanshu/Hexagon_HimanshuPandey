@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
 from app.database import init_db, close_db
-from app.routes import auth, sensors, advice, weather, notifications, resources, dashboard, knowledge
+from app.routes import auth, sensors, advice, weather, notifications, resources, dashboard, knowledge, account
 
 
 @asynccontextmanager
@@ -64,6 +64,7 @@ async def health_check():
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(account.router, prefix="/api/account", tags=["Account"])
 app.include_router(sensors.router, prefix="/api/sensors", tags=["Sensors"])
 app.include_router(advice.router, prefix="/api/advice", tags=["AI Advice"])
 app.include_router(weather.router, prefix="/api/weather", tags=["Weather"])

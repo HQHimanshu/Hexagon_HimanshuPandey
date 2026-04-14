@@ -29,7 +29,8 @@ const Header = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    setUser(null);
+    navigate('/login');
   };
 
   return (
