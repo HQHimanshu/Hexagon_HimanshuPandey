@@ -50,3 +50,5 @@ logs/
 
 # PWA
 .sw-precache-cache/
+
+backend/knowledge_base/
