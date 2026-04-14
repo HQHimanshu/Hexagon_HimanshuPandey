@@ -183,6 +183,9 @@ async def send_email_otp(email: str, otp_code: str) -> dict:
         return {"status": "MOCK_SENT", "email": email}
     
     try:
+        # Remove spaces from Gmail app password if present
+        smtp_password = settings.SMTP_PASSWORD.replace(" ", "")
+        
         msg = EmailMessage()
         msg["Subject"] = subject
         msg["From"] = settings.SMTP_EMAIL
@@ -195,7 +198,7 @@ async def send_email_otp(email: str, otp_code: str) -> dict:
             port=settings.SMTP_PORT,
             start_tls=True,
             username=settings.SMTP_EMAIL,
-            password=settings.SMTP_PASSWORD
+            password=smtp_password
         )
 
         print(f"✅ Email OTP sent to {email}")

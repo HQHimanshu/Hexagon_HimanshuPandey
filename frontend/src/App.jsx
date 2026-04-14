@@ -24,6 +24,7 @@ import Account from './pages/Account'
 
 // Auth Pages
 import AuthPage from './components/auth/AuthPage'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 import { useTranslation } from 'react-i18next'
 
@@ -36,24 +37,22 @@ const AnimatedRoutes = ({ user }) => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        
-        {/* Auth Routes */}
         <Route path="/login" element={!user ? <AuthPage /> : <Navigate to="/dashboard" />} />
-        <Route path="/signup" element={!user ? <Navigate to="/login" /> : <Navigate to="/dashboard" />} />
-        
-        {/* Protected Routes (config actual protection logic later) */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/suggestions" element={<Suggestions />} />
-        <Route path="/sensors" element={<Sensors />} />
-        <Route path="/sensors/:sensorId" element={<SensorDetail />} />
-        <Route path="/awareness" element={<Awareness />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/account" element={<Account />} />
-        <Route path="/about" element={<About />} />
+        <Route path="/signup" element={<Navigate to="/login" />} />
+
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/suggestions" element={<ProtectedRoute><Suggestions /></ProtectedRoute>} />
+        <Route path="/sensors" element={<ProtectedRoute><Sensors /></ProtectedRoute>} />
+        <Route path="/sensors/:sensorId" element={<ProtectedRoute><SensorDetail /></ProtectedRoute>} />
+        <Route path="/awareness" element={<ProtectedRoute><Awareness /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
       </Routes>
     </AnimatePresence>
   );

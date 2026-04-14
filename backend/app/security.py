@@ -1,3 +1,4 @@
+import random
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -50,5 +51,5 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 
 def generate_otp() -> str:
-    """Generate a 6-digit OTP (fixed for development)"""
-    return settings.OTP_SECRET
+    """Generate a unique random 6-digit OTP"""
+    return f"{random.randint(100000, 999999)}"

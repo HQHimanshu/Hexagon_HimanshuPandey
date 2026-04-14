@@ -1,6 +1,8 @@
 # 🌾 KrishiDrishti - AI-Powered Smart Farming Assistant
 
-**Smart India Hackathon PS-301: IoT + AI based Smart Agriculture System**
+** IoT + AI based Smart Agriculture System**
+
+Drive Video :- https://drive.google.com/file/d/1hjpHISgc31nZf6Q2Fmrh00AyND9AI4ef/view?usp=drivesdk
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)](https://fastapi.tiangolo.com/)

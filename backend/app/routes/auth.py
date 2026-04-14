@@ -58,17 +58,28 @@ async def send_email_otp_endpoint(
     # Send OTP via email
     try:
         email_result = await send_email_otp(email_request.email, otp_code)
-        print(f"✅ Email OTP sent to {email_request.email}: {otp_code}")
+        
+        if email_result.get("status") != "SENT":
+            print(f"❌ Email delivery failed: {email_result}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to send OTP email: {email_result.get('error', 'Unknown error')}"
+            )
+        
+        print(f"✅ Login OTP sent to {email_request.email}: {otp_code}")
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"⚠️ Failed to send email OTP: {e}")
-        print(f"📧 [FALLBACK] OTP for {email_request.email}: {otp_code}")
-        email_result = {"status": "FALLBACK", "error": str(e)}
+        print(f"❌ Failed to send email OTP: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send OTP email: {str(e)}"
+        )
 
     return {
         "message": "OTP sent successfully to email",
         "email": email_request.email,
-        "mock_otp": otp_code,
-        "delivery_status": email_result.get("status", "UNKNOWN")
+        "delivery_status": "SENT"
     }
 
 
@@ -189,17 +200,28 @@ async def send_signup_otp(
     # Send OTP via email
     try:
         email_result = await send_email_otp(signup_request.email, otp_code)
+        
+        if email_result.get("status") != "SENT":
+            print(f"❌ Email delivery failed: {email_result}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to send OTP email: {email_result.get('error', 'Unknown error')}"
+            )
+        
         print(f"✅ Signup OTP sent to {signup_request.email}: {otp_code}")
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"⚠️ Failed to send email OTP: {e}")
-        print(f"📧 [FALLBACK] Signup OTP for {signup_request.email}: {otp_code}")
-        email_result = {"status": "FALLBACK", "error": str(e)}
+        print(f"❌ Failed to send email OTP: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send OTP email: {str(e)}"
+        )
 
     return {
         "message": "OTP sent successfully",
         "email": signup_request.email,
-        "mock_otp": otp_code,
-        "delivery_status": email_result.get("status", "UNKNOWN")
+        "delivery_status": "SENT"
     }
 
 
@@ -317,67 +339,11 @@ async def send_otp(
     otp_request: OTPRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    """Send OTP to phone number via WhatsApp"""
-
-    # Validate phone number
-    if not validate_phone(otp_request.phone):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid phone number format"
-        )
-
-    # Generate OTP
-    otp_code = generate_otp()
-
-    # Check if user exists, create if not
-    result = await db.execute(
-        select(User).where(User.phone == otp_request.phone)
+    """Deprecated - Use /send-email-otp instead"""
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Phone-based OTP is deprecated. Please use email-based OTP at /send-email-otp endpoint."
     )
-    user = result.scalar_one_or_none()
-
-    if not user:
-        user = User(phone=otp_request.phone)
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-
-    # Store OTP in database
-    otp_record = OTPVerification(
-        phone=otp_request.phone,
-        otp_code=otp_code,
-        expires_at=datetime.utcnow() + timedelta(minutes=5)
-    )
-    db.add(otp_record)
-    await db.commit()
-
-    # Send OTP via WhatsApp
-    whatsapp_message = f"🌾 *KrishiDrishti OTP Verification*\n\nYour OTP code is: *{otp_code}*\n\nThis code expires in 5 minutes.\n\n_If you didn't request this code, please ignore this message._"
-    
-    whatsapp_result = {"status": "UNKNOWN", "error": None}
-    
-    try:
-        whatsapp_result = await send_whatsapp(otp_request.phone, whatsapp_message)
-        
-        # Check if it actually succeeded
-        if whatsapp_result.get("status") in ["SENT", "MOCK_SENT"]:
-            print(f"✅ WhatsApp OTP sent to {otp_request.phone}: {otp_code}")
-        else:
-            # Fallback: print OTP to console
-            print(f"⚠️ WhatsApp delivery issue: {whatsapp_result}")
-            print(f"📱 [FALLBACK] OTP for {otp_request.phone}: {otp_code}")
-            
-    except Exception as e:
-        print(f"❌ WhatsApp send failed: {e}")
-        # Fallback to console for development
-        print(f"📱 [FALLBACK - WhatsApp Error] OTP for {otp_request.phone}: {otp_code}")
-        whatsapp_result = {"status": "FALLBACK", "error": str(e)}
-
-    return {
-        "message": "OTP sent successfully",
-        "phone": otp_request.phone,
-        "mock_otp": otp_code,  # Remove in production
-        "delivery_status": whatsapp_result.get("status", "UNKNOWN")
-    }
 
 
 @router.post("/verify-otp", response_model=TokenResponse)
@@ -385,7 +351,11 @@ async def verify_otp(
     otp_verify: OTPVerify,
     db: AsyncSession = Depends(get_db)
 ):
-    """Verify OTP and return JWT token"""
+    """Deprecated - Use /verify-email-otp instead"""
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Phone-based OTP verification is deprecated. Please use /verify-email-otp endpoint."
+    )
     
     # Find latest OTP for this phone
     result = await db.execute(

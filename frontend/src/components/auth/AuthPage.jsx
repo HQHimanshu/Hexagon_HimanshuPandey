@@ -94,13 +94,9 @@ const AuthPage = () => {
     try {
       const response = await api.post('/auth/send-email-otp', { email: loginEmail });
       
-      setSuccess(`✅ OTP sent to ${loginEmail}!`);
+      setSuccess(`✅ OTP sent to ${loginEmail}! Check your inbox.`);
       setLoginStep(2);
       setCountdown(60);
-      
-      setTimeout(() => {
-        alert(`📧 Login OTP: ${response.data.mock_otp}\n\nCheck your email for the code.`);
-      }, 500);
       
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to send OTP. Please try again.');
@@ -155,13 +151,9 @@ const AuthPage = () => {
         crops: signupCrops
       });
       
-      setSuccess(`✅ Welcome ${signupName}! OTP sent to ${signupEmail}!`);
+      setSuccess(`✅ Welcome ${signupName}! OTP sent to ${signupEmail}! Check your inbox.`);
       setSignupStep(2);
       setCountdown(60);
-      
-      setTimeout(() => {
-        alert(`📧 Signup OTP: ${response.data.mock_otp}\n\nCheck your email to complete signup.`);
-      }, 500);
       
     } catch (err) {
       if (err.response?.status === 409) {
@@ -314,7 +306,7 @@ const AuthPage = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Enter OTP from WhatsApp
+                        Enter OTP from Email
                       </label>
                       <div className="relative">
                         <Key size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -539,7 +531,7 @@ const AuthPage = () => {
                     </button>
 
                     <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-                      We'll send an OTP via WhatsApp to verify your number
+                      We'll send an OTP via email to verify your account
                     </p>
                   </form>
                 ) : (
@@ -566,7 +558,7 @@ const AuthPage = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Enter OTP from WhatsApp
+                        Enter OTP from Email
                       </label>
                       <div className="relative">
                         <Key size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
