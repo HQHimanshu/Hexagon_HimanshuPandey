@@ -28,6 +28,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> int:
+    """Verify JWT token and return user ID"""
     try:
         payload = jwt.decode(
             credentials.credentials,
@@ -36,16 +37,26 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
         )
         user_id: int = payload.get("sub")
         if user_id is None:
+            print(f"❌ Token validation failed: 'sub' is None, payload: {payload}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        print(f"✅ Token validated successfully for user_id: {user_id}")
         return user_id
-    except JWTError:
+    except JWTError as e:
+        print(f"❌ JWT decode error: {str(e)}, token: {credentials.credentials[:20]}...")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        print(f"❌ Unexpected token error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token validation failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

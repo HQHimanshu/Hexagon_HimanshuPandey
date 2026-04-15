@@ -93,11 +93,15 @@ function App() {
     const userData = localStorage.getItem('user')
 
     if (token && userData) {
-       setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      console.log('✅ User authenticated on load:', parsedUser);
+    } else {
+      console.log('ℹ️ No user found in storage');
     }
 
     setLoading(false)
-  }, [i18n])
+  }, [])
 
   if (loading) {
     return (

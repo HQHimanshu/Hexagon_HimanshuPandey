@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, ArrowRight, CheckCircle, Loader2, Key, User, MapPin, Mail, Sprout, X, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../App';
 import api from '../../utils/api';
 
 // Available crops for selection
@@ -22,6 +23,7 @@ const REGIONS = [
 ];
 
 const AuthPage = () => {
+  const { setUser } = useAuth();
   const [activeTab, setActiveTab] = useState('login'); // 'login' or 'signup'
   
   // Login state
@@ -87,18 +89,32 @@ const AuthPage = () => {
   // ==================== LOGIN HANDLERS ====================
   const handleLoginSendOTP = async (e) => {
     e.preventDefault();
+    console.log('🔘 Send OTP button clicked');
+    console.log('📧 Email value:', loginEmail);
+    console.log('🔒 Loading state:', loading);
+    console.log('✅ Button enabled:', loginEmail.trim() !== '' && !loading);
+    
+    if (!loginEmail.trim()) {
+      alert('⚠️ Please enter your email address first!');
+      return;
+    }
+    
     setError('');
     setSuccess('');
     setLoading(true);
+    console.log('📤 Sending OTP to:', loginEmail);
 
     try {
       const response = await api.post('/auth/send-email-otp', { email: loginEmail });
-      
+
+      console.log('✅ OTP sent successfully!', response.data);
       setSuccess(`✅ OTP sent to ${loginEmail}! Check your inbox.`);
       setLoginStep(2);
       setCountdown(60);
-      
+
     } catch (err) {
+      console.error('❌ Failed to send OTP:', err);
+      console.error('Error response:', err.response?.data);
       setError(err.response?.data?.detail || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
@@ -112,19 +128,48 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/verify-email-otp', {
+      const payload = {
         email: loginEmail,
         otp_code: loginOtp
-      });
+      };
+      console.log('🔍 Login OTP Verification Payload:', payload);
+      
+      const response = await api.post('/auth/verify-email-otp', payload);
 
+      console.log('✅ Login successful, response:', response.data);
+      console.log('🔑 Access token received:', response.data.access_token ? 'YES (length: ' + response.data.access_token.length + ')' : 'NO');
+      console.log('👤 User data:', response.data.user);
+      
       localStorage.setItem('auth_token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user); // Update global auth context
+
+      // Verify storage
+      const storedToken = localStorage.getItem('auth_token');
+      const storedUser = localStorage.getItem('user');
+      console.log('✅ Token stored in localStorage:', storedToken ? 'YES (length: ' + storedToken.length + ')' : 'NO');
+      console.log('✅ User stored in localStorage:', storedUser ? 'YES' : 'NO');
 
       setSuccess('✅ Login successful! Redirecting...');
-      setTimeout(() => navigate('/dashboard'), 1000);
+      
+      // Redirect to dashboard immediately with full page reload to ensure auth context updates
+      console.log('🚀 Redirecting to dashboard...');
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
 
     } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid OTP. Please try again.');
+      console.error('❌ Login OTP verification failed:', err);
+      console.error('Error response:', err.response?.data);
+      
+      const errorMsg = err.response?.data?.detail || 'Invalid OTP. Please try again.';
+      setError(errorMsg);
+      
+      // Show the correct OTP in a user-friendly way if available
+      if (errorMsg.includes('The correct OTP is:')) {
+        const correctOtp = errorMsg.split('The correct OTP is:')[1]?.trim();
+        alert(`❌ Wrong OTP!\n\nThe correct OTP is: ${correctOtp}\n\nPlease enter this code and try again.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -174,22 +219,43 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/verify-signup-otp', {
+      const payload = {
         email: signupEmail,
         otp_code: signupOtp,
         name: signupName,
         phone: signupPhone || undefined,
         region: signupRegion,
         crops: signupCrops
-      });
+      };
+      console.log('🔍 Signup OTP Verification Payload:', payload);
+      
+      const response = await api.post('/auth/verify-signup-otp', payload);
 
+      console.log('✅ Signup successful, response:', response.data);
+      console.log('🔑 Access token received:', response.data.access_token ? 'YES (length: ' + response.data.access_token.length + ')' : 'NO');
+      console.log('👤 User data:', response.data.user);
+      
       localStorage.setItem('auth_token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user); // Update global auth context
+
+      // Verify storage
+      const storedToken = localStorage.getItem('auth_token');
+      const storedUser = localStorage.getItem('user');
+      console.log('✅ Token stored in localStorage:', storedToken ? 'YES (length: ' + storedToken.length + ')' : 'NO');
+      console.log('✅ User stored in localStorage:', storedUser ? 'YES' : 'NO');
 
       setSuccess(`🎉 Welcome ${signupName}! Signup successful! Redirecting...`);
-      setTimeout(() => navigate('/dashboard'), 1500);
+      
+      // Redirect to dashboard immediately with full page reload to ensure auth context updates
+      console.log('🚀 Redirecting to dashboard...');
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
 
     } catch (err) {
+      console.error('❌ Signup OTP verification failed:', err);
+      console.error('Error response:', err.response?.data);
       setError(err.response?.data?.detail || 'Invalid OTP. Please try again.');
     } finally {
       setLoading(false);

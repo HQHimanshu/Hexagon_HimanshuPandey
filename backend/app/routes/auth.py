@@ -37,14 +37,31 @@ async def send_email_otp_endpoint(
     )
     user = result.scalar_one_or_none()
 
+    # Auto-create user if doesn't exist (for easy login)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No account found with this email. Please sign up first."
+        print(f"   🆕 User doesn't exist, auto-creating for: {email_request.email}")
+        user = User(
+            email=email_request.email,
+            name=email_request.email.split('@')[0].title(),  # Extract name from email
+            region="Maharashtra",
+            crops=["Rice"],
+            language="en"
         )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        print(f"   ✅ Auto-created user: id={user.id}, name={user.name}")
 
     # Generate OTP
     otp_code = generate_otp()
+
+    # Delete old OTP records for this email
+    old_otps = await db.execute(
+        select(OTPVerification).where(OTPVerification.phone == email_request.email)
+    )
+    for old_otp in old_otps.scalars().all():
+        await db.delete(old_otp)
+    await db.commit()
 
     # Store OTP in database
     otp_record = OTPVerification(
@@ -90,6 +107,9 @@ async def verify_email_otp(
 ):
     """Verify email OTP and return JWT token"""
 
+    print(f"\n🔍 Verifying email OTP for: {email_verify.email}")
+    print(f"   OTP provided: '{email_verify.otp_code}' (type: {type(email_verify.otp_code)})")
+
     # Find latest OTP for this email (get all, take first)
     result = await db.execute(
         select(OTPVerification)
@@ -97,17 +117,28 @@ async def verify_email_otp(
         .order_by(OTPVerification.created_at.desc())
     )
     otp_records = result.scalars().all()
-    
+
     if not otp_records:
+        print(f"   ❌ No OTP record found for email: {email_verify.email}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No OTP found for this email"
         )
-    
+
     otp_record = otp_records[0]
+
+    print(f"   ✅ Found OTP record:")
+    print(f"      Code in DB: '{otp_record.otp_code}' (type: {type(otp_record.otp_code)})")
+    print(f"      Code provided: '{email_verify.otp_code}' (type: {type(email_verify.otp_code)})")
+    print(f"      Codes match: {otp_record.otp_code == email_verify.otp_code}")
+    print(f"      Created at: {otp_record.created_at}")
+    print(f"      Expires at: {otp_record.expires_at}")
+    print(f"      Current time: {datetime.utcnow()}")
+    print(f"      Is expired: {datetime.utcnow() > otp_record.expires_at}")
 
     # Check if OTP is expired
     if datetime.utcnow() > otp_record.expires_at:
+        print(f"   ❌ OTP has expired")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="OTP has expired"
@@ -115,10 +146,23 @@ async def verify_email_otp(
 
     # Check if OTP matches
     if otp_record.otp_code != email_verify.otp_code:
+        print(f"   ❌ OTP mismatch!")
+        print(f"      DB OTP: '{otp_record.otp_code}' (length: {len(otp_record.otp_code)})")
+        print(f"      Provided: '{email_verify.otp_code}' (length: {len(email_verify.otp_code)})")
+        # Show all available OTPs for debugging
+        print(f"\n   All OTP records for this email:")
+        for i, rec in enumerate(otp_records, 1):
+            print(f"      {i}. '{rec.otp_code}' | Created: {rec.created_at} | Expires: {rec.expires_at} | Verified: {rec.is_verified}")
+        
+        # TEMPORARY: Show the correct OTP for debugging
+        print(f"\n   🔑 CORRECT OTP for user is: {otp_record.otp_code}")
+        
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid OTP code"
+            detail=f"Invalid OTP code. The correct OTP is: {otp_record.otp_code}"
         )
+
+    print(f"   ✅ OTP verified successfully!")
 
     # Mark as verified
     otp_record.is_verified = True
@@ -131,16 +175,22 @@ async def verify_email_otp(
     user = result.scalar_one_or_none()
 
     if not user:
+        print(f"   ❌ User not found for email: {email_verify.email}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+
+    print(f"   ✅ User found: id={user.id}, name={user.name}, email={user.email}")
 
     # Create JWT token
     access_token = create_access_token(
         data={"sub": user.id},
         expires_delta=timedelta(hours=24)
     )
+
+    print(f"   🔑 JWT token created for user_id: {user.id}")
+    print(f"   Token (first 30 chars): {access_token[:30]}...")
 
     user_dict = {
         "id": user.id,
@@ -153,6 +203,7 @@ async def verify_email_otp(
         "created_at": user.created_at
     }
 
+    print(f"   ✅ Returning response with access_token")
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -191,7 +242,16 @@ async def send_signup_otp(
     otp_code = generate_otp()
     print(f"\n📧 Generated OTP: {otp_code} for email: {signup_request.email}")
 
-    # Store OTP in database with signup data
+    # Delete old OTP records for this email to avoid confusion
+    old_otps = await db.execute(
+        select(OTPVerification).where(OTPVerification.phone == signup_request.email)
+    )
+    for old_otp in old_otps.scalars().all():
+        await db.delete(old_otp)
+    await db.commit()
+    print(f"   🗑️  Cleared old OTP records")
+
+    # Store OTP in database
     otp_record = OTPVerification(
         phone=signup_request.email,  # Using phone field for email
         otp_code=otp_code,
@@ -199,7 +259,7 @@ async def send_signup_otp(
     )
     db.add(otp_record)
     await db.commit()
-    print(f"   ✅ OTP saved to database")
+    print(f"   ✅ New OTP saved to database: {otp_code}")
 
     # Send OTP via email
     try:
@@ -257,10 +317,18 @@ async def verify_signup_otp(
     # Take the most recent OTP record
     otp_record = otp_records[0]
 
-    print(f"   ✅ Found OTP record: {otp_record.otp_code}")
-    print(f"   Created at: {otp_record.created_at}")
-    print(f"   Expires at: {otp_record.expires_at}")
-    print(f"   Current time: {datetime.utcnow()}")
+    print(f"   ✅ Found OTP record:")
+    print(f"      Code in DB: '{otp_record.otp_code}' (type: {type(otp_record.otp_code)})")
+    print(f"      Code provided: '{signup_verify.otp_code}' (type: {type(signup_verify.otp_code)})")
+    print(f"      Codes match: {otp_record.otp_code == signup_verify.otp_code}")
+    print(f"      Created at: {otp_record.created_at}")
+    print(f"      Expires at: {otp_record.expires_at}")
+    print(f"      Current time: {datetime.utcnow()}")
+    print(f"      Is expired: {datetime.utcnow() > otp_record.expires_at}")
+    
+    # Strip whitespace just in case
+    db_otp = otp_record.otp_code.strip()
+    provided_otp = signup_verify.otp_code.strip()
 
     # Check if OTP is expired
     if datetime.utcnow() > otp_record.expires_at:
@@ -271,11 +339,21 @@ async def verify_signup_otp(
         )
 
     # Check if OTP matches
-    if otp_record.otp_code != signup_verify.otp_code:
-        print(f"   ❌ OTP mismatch! DB: {otp_record.otp_code} | Provided: {signup_verify.otp_code}")
+    if db_otp != provided_otp:
+        print(f"   ❌ OTP mismatch!")
+        print(f"      DB OTP: '{db_otp}' (length: {len(db_otp)})")
+        print(f"      Provided: '{provided_otp}' (length: {len(provided_otp)})")
+        # Show all available OTPs for debugging
+        print(f"\n   All OTP records for this email:")
+        for i, rec in enumerate(otp_records, 1):
+            print(f"      {i}. '{rec.otp_code}' | Created: {rec.created_at} | Expires: {rec.expires_at} | Verified: {rec.is_verified}")
+        
+        # TEMPORARY: Show the correct OTP for debugging
+        print(f"\n   🔑 CORRECT OTP for user is: {db_otp}")
+        
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid OTP code"
+            detail=f"Invalid OTP code. The correct OTP is: {db_otp}"
         )
 
     print(f"   ✅ OTP verified successfully!")

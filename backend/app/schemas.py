@@ -106,6 +106,7 @@ class SignupOTPVerify(BaseModel):
     phone: Optional[str] = Field(None, max_length=15)
     region: str = Field(..., min_length=2, max_length=100)
     crops: Optional[List[str]] = None
+    language: Optional[str] = Field(None, max_length=10)
 
 
 class TokenResponse(BaseModel):

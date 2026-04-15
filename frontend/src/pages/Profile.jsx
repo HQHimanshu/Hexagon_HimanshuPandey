@@ -30,7 +30,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const userData = localStorage.getItem('user');
       if (userData) {
         const parsed = JSON.parse(userData);

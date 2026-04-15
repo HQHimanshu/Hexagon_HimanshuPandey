@@ -13,8 +13,15 @@ const Header = () => {
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
-    if (userData) setUser(JSON.parse(userData));
-    fetchUnreadCount();
+    const token = localStorage.getItem('auth_token');
+    
+    if (userData) {
+      setUser(JSON.parse(userData));
+      // Only fetch notifications if user is logged in
+      if (token) {
+        fetchUnreadCount();
+      }
+    }
   }, []);
 
   const fetchUnreadCount = async () => {
@@ -22,15 +29,15 @@ const Header = () => {
       const res = await api.get('/notifications?limit=50');
       setUnreadCount(res.data.filter(a => !a.is_read).length);
     } catch (err) {
-      // Silently fail
+      console.log('⚠️ Failed to fetch notifications:', err.message);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
     setUser(null);
-    navigate('/login');
+    navigate('/');
   };
 
   return (

@@ -54,15 +54,22 @@ const Dashboard = () => {
     try {
       // Try 1: Full metrics
       const res = await api.get('/dashboard/metrics', { timeout: 5000 });
-      if (res.data) { setMetrics(res.data); setLastUpdate(new Date()); }
+      if (res.data) { 
+        setMetrics(res.data); 
+        setLastUpdate(new Date());
+        console.log('✅ Dashboard metrics loaded from API');
+      }
     } catch (e1) {
+      console.log('⚠️ Dashboard metrics API failed, using demo data:', e1.message);
       try {
         // Try 2: Just sensor data
         const res = await api.get('/sensors/latest', { timeout: 5000 });
         if (res.data) {
           setMetrics({ ...DEMO_DATA, current_sensor_data: res.data });
+          console.log('✅ Using sensor data + demo data');
         }
       } catch (e2) {
+        console.log('⚠️ Sensor API failed, using full demo data');
         // Try 3: Use demo data
         setMetrics(DEMO_DATA);
       }
