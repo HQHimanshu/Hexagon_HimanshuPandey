@@ -18,9 +18,9 @@ const Analytics = () => {
   const fetchData = async () => {
     setLoading(true);
     setError('');
-    console.log('[Analytics] Fetching data for', days, 'days...');
+    console.log('[Analytics] Fetching historical data for', days, 'days...');
     
-    // ALWAYS start with demo data immediately so page renders
+    // ALWAYS show demo data immediately
     const now = Date.now();
     const demoData = [
       { timestamp: new Date(now - 300000).toISOString(), temperature: 32.5, humidity: 62, soil_moisture: 450 },
@@ -33,21 +33,23 @@ const Analytics = () => {
     setSensorData(demoData);
 
     try {
-      // Try sensor history in background
-      console.log('[Analytics] Fetching sensor history...');
-      const res = await api.get(`/sensors/history?hours=${days * 24}`, { timeout: 8000 });
+      console.log('[Analytics] Fetching from backend for', days * 24, 'hours...');
+      const res = await api.get(`/sensors/history?hours=${days * 24}`, { timeout: 10000 });
+      console.log('[Analytics] Response:', res.data);
+      
       if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-        console.log('[Analytics] Got', res.data.length, 'readings from backend');
+        console.log('[Analytics] ✅ Got', res.data.length, 'readings from backend');
         const formatted = res.data.slice(-100).map(r => ({
           timestamp: r.timestamp,
           temperature: r.temperature || 0,
           humidity: r.humidity || 0,
           soil_moisture: r.soil_moisture_root || r.soil_moisture_surface || 0
         }));
+        console.log('[Analytics] Formatted data sample:', formatted.slice(0, 3));
         setSensorData(formatted);
         setError('');
       } else {
-        console.warn('[Analytics] No data from backend, using demo');
+        console.log('[Analytics] ⚠️ No data or empty array from backend, using demo');
         setError('Showing demo data - connect Arduino for live data');
       }
     } catch (e) {

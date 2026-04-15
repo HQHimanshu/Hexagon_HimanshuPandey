@@ -28,7 +28,7 @@ const OTPVerification = () => {
       // Try real backend
       const response = await api.post('/auth/verify-otp', { phone, otp_code: mockOtp });
       if (response.data && response.data.access_token) {
-        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('auth_token', response.data.access_token);
         localStorage.setItem('user', JSON.stringify(response.data.user || { phone }));
         setUser(response.data.user || { phone });
         setSuccess(true);
@@ -40,7 +40,7 @@ const OTPVerification = () => {
     }
     
     // Fallback: Demo mode
-    localStorage.setItem('token', 'demo-token-12345');
+    localStorage.setItem('auth_token', 'demo-token-12345');
     const demoUser = { phone, id: 1, name: 'Demo Farmer' };
     localStorage.setItem('user', JSON.stringify(demoUser));
     setUser(demoUser);

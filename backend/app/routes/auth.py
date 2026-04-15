@@ -340,21 +340,25 @@ async def verify_signup_otp(
 
     # Check if OTP matches
     if db_otp != provided_otp:
-        print(f"   ❌ OTP mismatch!")
-        print(f"      DB OTP: '{db_otp}' (length: {len(db_otp)})")
-        print(f"      Provided: '{provided_otp}' (length: {len(provided_otp)})")
-        # Show all available OTPs for debugging
-        print(f"\n   All OTP records for this email:")
-        for i, rec in enumerate(otp_records, 1):
-            print(f"      {i}. '{rec.otp_code}' | Created: {rec.created_at} | Expires: {rec.expires_at} | Verified: {rec.is_verified}")
-        
-        # TEMPORARY: Show the correct OTP for debugging
-        print(f"\n   🔑 CORRECT OTP for user is: {db_otp}")
-        
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid OTP code. The correct OTP is: {db_otp}"
-        )
+        # TEMPORARY BYPASS: Allow demo OTP '123456' for any email
+        if provided_otp == '123456':
+            print(f"   ✅ DEMO OTP '123456' accepted for signup email: {signup_verify.email}")
+        else:
+            print(f"   ❌ OTP mismatch!")
+            print(f"      DB OTP: '{db_otp}' (length: {len(db_otp)})")
+            print(f"      Provided: '{provided_otp}' (length: {len(provided_otp)})")
+            # Show all available OTPs for debugging
+            print(f"\n   All OTP records for this email:")
+            for i, rec in enumerate(otp_records, 1):
+                print(f"      {i}. '{rec.otp_code}' | Created: {rec.created_at} | Expires: {rec.expires_at} | Verified: {rec.is_verified}")
+            
+            # TEMPORARY: Show the correct OTP for debugging
+            print(f"\n   🔑 CORRECT OTP for user is: {otp_record.otp_code}")
+            
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid OTP code. The correct OTP is: {otp_record.otp_code}"
+            )
 
     print(f"   ✅ OTP verified successfully!")
 

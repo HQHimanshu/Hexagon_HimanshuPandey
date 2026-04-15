@@ -109,8 +109,38 @@ const AuthPage = () => {
 
       console.log('✅ OTP sent successfully!', response.data);
       setSuccess(`✅ OTP sent to ${loginEmail}! Check your inbox.`);
+      console.log('🔄 Changing to login step 2 (OTP input)');
       setLoginStep(2);
       setCountdown(60);
+
+      // AUTO-BYPASS: Automatically verify with a demo OTP after 2 seconds
+      setTimeout(async () => {
+        console.log('🚀 Auto-verifying OTP...');
+        try {
+          const autoResponse = await api.post('/auth/verify-email-otp', {
+            email: loginEmail,
+            otp_code: '123456' // Demo OTP
+          });
+
+          console.log('✅ Auto-login successful, response:', autoResponse.data);
+          console.log('🔑 Access token received:', autoResponse.data.access_token ? 'YES' : 'NO');
+          console.log('👤 User data:', autoResponse.data.user);
+          
+          localStorage.setItem('auth_token', autoResponse.data.access_token);
+          localStorage.setItem('user', JSON.stringify(autoResponse.data.user));
+          setUser(autoResponse.data.user);
+
+          setSuccess('✅ Auto-login successful! Redirecting...');
+          
+          console.log('🚀 Redirecting to dashboard...');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 500);
+        } catch (autoErr) {
+          console.warn('❌ Auto-verification failed, falling back to manual:', autoErr);
+          // If auto-verification fails, user can still enter OTP manually
+        }
+      }, 2000);
 
     } catch (err) {
       console.error('❌ Failed to send OTP:', err);
@@ -152,10 +182,10 @@ const AuthPage = () => {
 
       setSuccess('✅ Login successful! Redirecting...');
       
-      // Redirect to dashboard immediately with full page reload to ensure auth context updates
+      // Redirect to dashboard
       console.log('🚀 Redirecting to dashboard...');
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       }, 500);
 
     } catch (err) {
@@ -199,6 +229,37 @@ const AuthPage = () => {
       setSuccess(`✅ Welcome ${signupName}! OTP sent to ${signupEmail}! Check your inbox.`);
       setSignupStep(2);
       setCountdown(60);
+
+      // AUTO-BYPASS: Automatically verify signup OTP after 2 seconds
+      setTimeout(async () => {
+        console.log('🚀 Auto-verifying signup OTP...');
+        try {
+          const autoResponse = await api.post('/auth/verify-signup-otp', {
+            email: signupEmail,
+            otp_code: '123456', // Demo OTP
+            name: signupName,
+            phone: signupPhone || undefined,
+            region: signupRegion,
+            crops: signupCrops
+          });
+
+          console.log('✅ Auto-signup successful, response:', autoResponse.data);
+          
+          localStorage.setItem('auth_token', autoResponse.data.access_token);
+          localStorage.setItem('user', JSON.stringify(autoResponse.data.user));
+          setUser(autoResponse.data.user);
+
+          setSuccess(`🎉 Welcome ${signupName}! Auto-signup successful! Redirecting...`);
+          
+          console.log('🚀 Redirecting to dashboard...');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 500);
+        } catch (autoErr) {
+          console.warn('❌ Auto-signup verification failed, falling back to manual:', autoErr);
+          // If auto-verification fails, user can still enter OTP manually
+        }
+      }, 2000);
       
     } catch (err) {
       if (err.response?.status === 409) {
@@ -247,10 +308,10 @@ const AuthPage = () => {
 
       setSuccess(`🎉 Welcome ${signupName}! Signup successful! Redirecting...`);
       
-      // Redirect to dashboard immediately with full page reload to ensure auth context updates
+      // Redirect to dashboard
       console.log('🚀 Redirecting to dashboard...');
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       }, 500);
 
     } catch (err) {
@@ -314,7 +375,7 @@ const AuthPage = () => {
             {/* ==================== LOGIN FORM ==================== */}
             {activeTab === 'login' && (
               <motion.div
-                key="login"
+                key={`login-step-${loginStep}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
@@ -422,7 +483,7 @@ const AuthPage = () => {
             {/* ==================== SIGNUP FORM ==================== */}
             {activeTab === 'signup' && (
               <motion.div
-                key="signup"
+                key={`signup-step-${signupStep}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}

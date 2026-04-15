@@ -4,7 +4,7 @@ let reconnectTimeout = null
 const RECONNECT_DELAY = 5000
 
 export const connectWebSocket = (onMessage, onError) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('auth_token')
   if (!token) {
     console.log('No token available, WebSocket not connected')
     return

@@ -4,28 +4,26 @@ from app.config import settings
 import time
 
 
-# Cache for weather data (avoid frequent API calls)
+# Cache for weather data (5-minute cache for live updates)
 _weather_cache = {}
-CACHE_DURATION = 1800  # 30 minutes
+CACHE_DURATION = 300  # 5 minutes for live weather
 
 
 async def get_weather_data(lat: float, lng: float) -> Optional[Dict]:
-    """Fetch current weather data from OpenWeatherMap"""
+    """Fetch current weather data from OpenWeatherMap - LIVE UPDATES"""
     
-    # Return mock data immediately if no API key configured
-    return get_mock_weather()
-
     cache_key = f"{lat:.2f},{lng:.2f}"
     current_time = time.time()
     
-    # Check cache
+    # Check cache first (5-minute cache)
     if cache_key in _weather_cache:
         cached_data, cached_time = _weather_cache[cache_key]
         if current_time - cached_time < CACHE_DURATION:
+            print(f"[Weather] Using cached data for {lat},{lng} (age: {int(current_time - cached_time)}s)")
             return cached_data
-    
-    # Fetch from API
+    # Fetch from API - Try to get real weather
     try:
+        print(f"[Weather] 🔄 Fetching real weather for {lat},{lng}...")
         url = f"https://api.openweathermap.org/data/2.5/weather"
         params = {
             "lat": lat,
@@ -34,21 +32,28 @@ async def get_weather_data(lat: float, lng: float) -> Optional[Dict]:
             "units": "metric"
         }
         
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params, timeout=10.0)
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, params=params)
             
             if response.status_code == 200:
                 data = response.json()
+                print(f"[Weather] ✅ Got real weather API response")
                 
                 weather = {
                     "temperature": data["main"]["temp"],
                     "feels_like": data["main"]["feels_like"],
                     "humidity": data["main"]["humidity"],
                     "description": data["weather"][0]["description"],
+                    "condition": data["weather"][0]["main"],
                     "wind_speed": data["wind"]["speed"],
                     "pressure": data["main"]["pressure"],
+                    "clouds": data.get("clouds", {}).get("all", 0),
+                    "rain": data.get("rain", {}).get("1h", 0),
+                    "sunrise": data.get("sys", {}).get("sunrise"),
+                    "sunset": data.get("sys", {}).get("sunset"),
                     "forecast": None,
-                    "alert": None
+                    "alert": None,
+                    "is_live": True  # Mark as live data
                 }
                 
                 # Check for weather alerts
@@ -58,15 +63,16 @@ async def get_weather_data(lat: float, lng: float) -> Optional[Dict]:
                 
                 # Cache the result
                 _weather_cache[cache_key] = (weather, current_time)
+                print(f"[Weather] 💾 Cached weather for {CACHE_DURATION}s")
                 
                 return weather
             else:
-                print(f"⚠️  Weather API error: {response.status_code}")
-                return None
+                print(f"[Weather] ⚠️  API error {response.status_code}: {response.text[:100]}")
+                return get_mock_weather()
     
     except Exception as e:
-        print(f"⚠️  Weather fetch error: {e}")
-        return None
+        print(f"[Weather] ❌ Fetch error: {type(e).__name__}: {e}")
+        return get_mock_weather()
 
 
 async def get_forecast_data(lat: float, lng: float) -> Optional[Dict]:

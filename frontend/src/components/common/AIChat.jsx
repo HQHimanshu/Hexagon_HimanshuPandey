@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Loader2, Sparkles, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, AlertTriangle, CheckCircle2, Clock, MessageSquareText, History, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../../utils/api';
 
@@ -8,21 +8,96 @@ const AIChat = ({ currentSensors }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState([{ role: 'ai', display: t('chat.welcome') || 'Hello! I\'m your farming assistant. Ask me anything about your crops.' }]);
   const [history, setHistory] = useState([]);
+  const [chatSessions, setChatSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(false);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    fetchHistory();
   }, [messages.length]);
+
+  useEffect(() => {
+    fetchHistory();
+    loadChatSessions();
+  }, []);
 
   const fetchHistory = async () => {
     try {
       const res = await api.get('/advice/history?limit=10', { timeout: 5000 });
       if (res.data) setHistory(res.data);
     } catch (e) {}
+  };
+
+  const loadChatSessions = () => {
+    const saved = localStorage.getItem('chat_sessions');
+    if (saved) {
+      const sessions = JSON.parse(saved);
+      setChatSessions(sessions);
+    }
+  };
+
+  const saveChatSession = (sessionMessages) => {
+    const sessions = [...chatSessions];
+    const sessionId = currentSessionId || Date.now().toString();
+    
+    const session = {
+      id: sessionId,
+      title: sessionMessages.length > 1 ? (sessionMessages.find(m => m.role === 'user')?.display?.substring(0, 50) || 'New Chat') : 'Welcome Chat',
+      messages: sessionMessages,
+      timestamp: new Date().toISOString(),
+      lastMessage: sessionMessages[sessionMessages.length - 1]?.display || sessionMessages[sessionMessages.length - 1]?.action || ''
+    };
+
+    const existingIndex = sessions.findIndex(s => s.id === sessionId);
+    if (existingIndex >= 0) {
+      sessions[existingIndex] = session;
+    } else {
+      sessions.unshift(session); // Add to beginning
+    }
+
+    // Keep only last 20 sessions
+    if (sessions.length > 20) {
+      sessions.splice(20);
+    }
+
+    setChatSessions(sessions);
+    localStorage.setItem('chat_sessions', JSON.stringify(sessions));
+    setCurrentSessionId(sessionId);
+  };
+
+  const loadChatSession = (sessionId) => {
+    const session = chatSessions.find(s => s.id === sessionId);
+    if (session) {
+      setMessages(session.messages);
+      setCurrentSessionId(sessionId);
+      setShowChatHistory(false);
+    }
+  };
+
+  const startNewChat = () => {
+    // Save current session before starting new one
+    if (messages.length > 1) {
+      saveChatSession(messages);
+    }
+    
+    const welcomeMessage = { role: 'ai', display: t('chat.welcome') || 'Hello! I\'m your farming assistant. Ask me anything about your crops.' };
+    setMessages([welcomeMessage]);
+    setCurrentSessionId(null);
+    setShowChatHistory(false);
+  };
+
+  const deleteChatSession = (sessionId) => {
+    const updatedSessions = chatSessions.filter(s => s.id !== sessionId);
+    setChatSessions(updatedSessions);
+    localStorage.setItem('chat_sessions', JSON.stringify(updatedSessions));
+    
+    if (currentSessionId === sessionId) {
+      startNewChat();
+    }
   };
 
   const handleSend = async (e) => {
@@ -35,35 +110,91 @@ const AIChat = ({ currentSensors }) => {
     setIsTyping(true);
 
     try {
+      // Fetch latest sensor data for the AI
+      let sensorData = currentSensors;
+      try {
+        console.log('🔄 Chat: Fetching latest sensor data...');
+        const sensorRes = await api.get('/sensors/latest', { timeout: 5000 });
+        if (sensorRes.data) {
+          console.log('✅ Chat: Got live sensor data:', sensorRes.data);
+          sensorData = sensorRes.data;
+        }
+      } catch (err) {
+        console.log('⚠️ Chat: Could not fetch sensor data -', err.message);
+      }
+
+      console.log('💬 Chat: Sending to AI with sensor data:', sensorData);
       const res = await api.post('/advice/', {
         question: query,
-        sensor_data: currentSensors || null
-      }, { timeout: 30000 });
+        sensor_data: sensorData
+      }, { timeout: 40000 });
 
       const data = res.data;
+      console.log('✅ Chat: Got AI response:', data);
       setMessages(prev => [...prev, {
         role: 'ai',
         recommendation: data.recommendation,
         reason: data.reason,
-        action: data.action
+        action: data.action,
+        risk: data.risk
       }]);
+      
+      // Save chat session after AI response
+      setTimeout(() => {
+        setMessages(prevMsgs => {
+          saveChatSession(prevMsgs);
+          return prevMsgs;
+        });
+      }, 100);
     } catch (err) {
-      console.warn('AI advice failed, using fallback');
+      console.error('❌ Chat: AI request failed:', err.message);
+      if (err.response?.status === 408 || err.code === 'ECONNABORTED') {
+        console.error('⏱️ Chat: Request timeout - Ollama may be slow or unavailable');
+      }
+      
       // Smart fallback based on question keywords
       let fallback = '';
+      let rec = 'GENERAL';
       const q = query.toLowerCase();
+      
       if (q.includes('irrigat') || q.includes('water')) {
-        fallback = '💧 Based on current soil moisture, I recommend checking soil moisture levels. If soil moisture is below 40%, irrigate for 30 minutes. If above 60%, wait 1-2 days.';
+        fallback = '💧 Based on soil moisture levels, I recommend checking if soil is dry. If soil moisture is below 40%, irrigate immediately for 30-45 minutes. If above 60%, wait and monitor.';
+        rec = 'IRRIGATE';
       } else if (q.includes('fertiliz') || q.includes('nutrient')) {
-        fallback = '🌿 For optimal fertilizer application, apply nitrogen-rich compost during early morning. Recommended: 50kg per acre for current growth stage.';
+        fallback = '🌿 For optimal fertilizer application, apply nitrogen-rich compost during early morning hours. Recommended: 50kg per acre. Water thoroughly after application.';
+        rec = 'FERTILIZE';
       } else if (q.includes('pest') || q.includes('disease')) {
-        fallback = '🛡️ Monitor crops weekly for pest signs. Use neem oil spray (5ml/liter water) as organic prevention. Check leaf undersides regularly.';
+        fallback = '🛡️ Monitor crops weekly for pest signs. Use neem oil spray (5ml per liter of water) as organic prevention. Check leaf undersides regularly for infestations.';
+        rec = 'PEST_CONTROL';
       } else if (q.includes('weather') || q.includes('rain')) {
-        fallback = '🌤️ Current conditions are favorable. Delay irrigation if rain is expected in next 24 hours. Monitor humidity for disease prevention.';
+        fallback = '🌤️ Current weather conditions look favorable for farming. If rain is expected in next 24-48 hours, delay irrigation. Monitor humidity levels for disease prevention.';
+        rec = 'WAIT';
       } else {
-        fallback = `🌾 Thanks for your question about "${query.substring(0, 50)}...". Based on current sensor data, your farm conditions look stable. For specific advice, monitor soil moisture daily and adjust irrigation accordingly.`;
+        fallback = `🌾 For your question about "${query.substring(0, 40)}...", I recommend monitoring soil moisture daily, maintaining proper irrigation schedule, and watching for any signs of stress or disease in your crops.`;
+        rec = 'MONITOR';
       }
-      setMessages(prev => [...prev, { role: 'ai', display: fallback }]);
+      
+      const newMessages = [{ 
+        role: 'ai',
+        display: '⚠️ AI Service: ' + fallback,
+        recommendation: rec,
+        reason: 'Using intelligent fallback - Ollama service may be temporarily unavailable',
+        action: fallback,
+        risk: 'Backend AI currently unavailable'
+      }];
+      
+      setMessages(prev => [...prev, newMessages[0]]);
+      
+      // Save fallback response to chat session
+      setTimeout(() => {
+        setMessages(prevMsgs => {
+          saveChatSession(prevMsgs);
+          return prevMsgs;
+        });
+      }, 100);
+      
+      // Save chat session after fallback response
+      setTimeout(() => saveChatSession(newMessages), 100);
     } finally {
       setIsTyping(false);
     }
@@ -71,7 +202,8 @@ const AIChat = ({ currentSensors }) => {
 
   const RecIcon = ({ type }) => {
     if (type === 'WAIT' || type === 'WARN') return <AlertTriangle className="text-amber-500" size={16} />;
-    if (type === 'ACT') return <CheckCircle2 className="text-emerald-500" size={16} />;
+    if (type === 'IRRIGATE' || type === 'ACT') return <CheckCircle2 className="text-emerald-500" size={16} />;
+    if (type === 'GENERAL') return <Bot className="text-blue-500" size={16} />;
     return <Sparkles className="text-blue-500" size={16} />;
   };
 
@@ -89,8 +221,14 @@ const AIChat = ({ currentSensors }) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setShowHistory(!showHistory)} className={`p-2 rounded-lg transition-colors ${showHistory ? 'bg-white/30 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`} title="History">
+          <button onClick={() => setShowChatHistory(!showChatHistory)} className={`p-2 rounded-lg transition-colors ${showChatHistory ? 'bg-white/30 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`} title="Chat History">
             <Clock size={20} />
+          </button>
+          <button onClick={startNewChat} className="p-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 transition-colors" title="New Chat">
+            <MessageSquareText size={20} />
+          </button>
+          <button onClick={() => setShowHistory(!showHistory)} className={`p-2 rounded-lg transition-colors ${showHistory ? 'bg-white/30 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`} title="Advice History">
+            <History size={20} />
           </button>
           <div className="flex items-center gap-2">
             <span className="relative flex h-3 w-3">
@@ -106,14 +244,56 @@ const AIChat = ({ currentSensors }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/50">
         {showHistory ? (
           <div className="space-y-3">
-            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase mb-4">History</h3>
-            {history.length === 0 ? <p className="text-center text-gray-400 py-8">No history yet</p> : history.map((item, i) => (
+            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase mb-4">Advice History</h3>
+            {history.length === 0 ? <p className="text-center text-gray-400 py-8">No advice history yet</p> : history.map((item, i) => (
               <div key={i} className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
                 <p className="text-xs text-gray-500 mb-1">{new Date(item.timestamp).toLocaleString()}</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Q: {item.question}</p>
                 <p className="text-sm text-emerald-600 dark:text-emerald-400">{item.answer || item.recommendation_type}</p>
               </div>
             ))}
+          </div>
+        ) : showChatHistory ? (
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase mb-4">Chat Sessions</h3>
+            <button onClick={startNewChat} className="w-full p-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors">
+              Start New Chat
+            </button>
+            {chatSessions.length === 0 ? (
+              <p className="text-center text-gray-400 py-8">No saved chat sessions yet</p>
+            ) : (
+              chatSessions.map((session) => (
+                <div key={session.id} className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{session.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {new Date(session.timestamp).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">
+                        {session.lastMessage}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 ml-2">
+                      <button 
+                        onClick={() => loadChatSession(session.id)}
+                        className="p-1 text-emerald-600 hover:text-emerald-700 transition-colors"
+                        title="Load Chat"
+                      >
+                        <MessageSquareText size={16} />
+                      </button>
+                      <button 
+                        onClick={() => deleteChatSession(session.id)}
+                        className="p-1 text-red-600 hover:text-red-700 transition-colors"
+                        title="Delete Chat"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         ) : (
           <AnimatePresence initial={false}>

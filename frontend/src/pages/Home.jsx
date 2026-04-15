@@ -1,19 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../App';
 import { LayoutDashboard, BarChart3, Lightbulb, Activity, Bell, User, Info, ArrowRight, Sprout, Cpu, Brain, Zap } from 'lucide-react';
 
 const Home = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-
-  // Redirect to dashboard if user is logged in
-  useEffect(() => {
-    if (user) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, navigate]);
 
   const features = [
     { path: '/dashboard', icon: LayoutDashboard, color: 'from-emerald-500 to-teal-500', title: 'Live Dashboard', desc: 'Real-time sensor monitoring with instant alerts' },
